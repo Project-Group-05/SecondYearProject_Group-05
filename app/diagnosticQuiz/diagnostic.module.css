@@ -1,0 +1,213 @@
+/* Full viewport containment, isolation from global layout headers */
+.container {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #F9FAFB; /* Base light gray workspace variant */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.quizWrapper {
+  width: 100%;
+  max-width: 760px;
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+.quizHeader {
+  text-align: center;
+  margin-bottom: 32px;
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 24px;
+}
+
+.title {
+  color: #1A2B5F; /* Primary corporate system Navy tint */
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.subtitle {
+  color: #6B7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.formStructure {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Linear Progress Bar Tracker UI */
+.progressContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 6px;
+  background-color: #E5E7EB;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #1A56DB; /* Brand standard secondary utility blue */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progressLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4B5563;
+  white-space: nowrap;
+}
+
+/* Central interactive question panels */
+.questionCard {
+  margin-bottom: 40px;
+}
+
+.questionText {
+  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 0 24px 0;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Standard clean button interaction logic overrides */
+.optionItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.optionItem:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+/* Selection state matching validation specs */
+.optionSelected {
+  background-color: #EFF6FF !important;
+  border-color: #1A56DB !important;
+}
+
+.optionMarker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: #F3F4F6;
+  border-radius: 6px;
+  font-weight: 700;
+  color: #4B5563;
+  margin-right: 16px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.optionSelected .optionMarker {
+  background-color: #1A56DB;
+  color: #FFFFFF;
+}
+
+.optionContent {
+  color: #374151;
+  font-weight: 500;
+}
+
+.optionSelected .optionContent {
+  color: #1E40AF;
+}
+
+/* Footer layout processing rules */
+.navigationControl {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #E5E7EB;
+  padding-top: 24px;
+}
+
+.backBtn {
+  background: none;
+  border: 1px solid #D1D5DB;
+  color: #4B5563;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+
+.backBtn:hover:not(:disabled) {
+  background-color: #F3F4F6;
+}
+
+.backBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nextBtn, .submitBtn {
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.nextBtn {
+  background-color: #1A56DB;
+  color: #FFFFFF;
+}
+
+.submitBtn {
+  background-color: #065F46; /* Target evaluation green per metric tables */
+  color: #FFFFFF;
+}
+
+.nextBtn:hover, .submitBtn:hover {
+  opacity: 0.95;
+}
+
+.nextBtn:disabled, .submitBtn:disabled {
+  background-color: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
