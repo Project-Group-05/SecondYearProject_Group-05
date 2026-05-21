@@ -16,12 +16,16 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); 
   text-align: center;
 }
+.logoAccent {
+  color: #60A5FA; 
+}
 
 
 .appNameText {
   color: #1A2B5F; 
   font-size: 2rem; 
-  font-weight: 700;
+  font-weight: 900; 
+  letter-spacing: -1px;
   margin-bottom: 8px;
   text-align: center;
 }
@@ -32,12 +36,6 @@
   margin-bottom: 30px;
 }
 
-.header h1 {
-  color: #1A2B5F;
-  margin-bottom: 8px;
-  font-size: 2rem; 
-  font-weight: 700;
-}
 
 .header::after {
   content: "Welcome back. Sign in to continue."; 
@@ -143,5 +141,63 @@
   text-decoration: underline;
 }
 
+/* --- Divider Style --- */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #9CA3AF;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.divider:not(:empty)::before {
+  margin-right: .75em;
+}
+
+.divider:not(:empty)::after {
+  margin-left: .75em;
+}
+
+/* --- Google Button Style --- */
+.googleBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #FFFFFF;
+  color: #374151; 
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.googleBtn:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.googleBtn:active {
+  transform: translateY(0);
+}
+
+.googleBtn svg {
+  display: block;
+}
 
 
