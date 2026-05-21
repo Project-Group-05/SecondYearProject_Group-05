@@ -17,11 +17,18 @@
   margin: 50px;
 }
 
+.logoAccent {
+  color: #60A5FA; /* SAME as landing page */
+}
+
+
 .appNameText {
   color: #1A2B5F; 
   font-size: 2rem; 
-  font-weight: 700;
+  font-weight: 900; 
+  letter-spacing: -1px;
   margin-bottom: 8px;
+  text-align: center;
 }
 
 .pageSubtitleText {
