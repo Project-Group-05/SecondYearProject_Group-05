@@ -6,7 +6,7 @@ export default function RegisterPage() {
     <div className={styles.container}>
       <div className={styles.glassCard}>
         <div className={styles.header}>
-          <h1 className={styles.appNameText}>Adaptive Chemistry</h1>
+          <h1 className={styles.appNameText}>Edu<span className={styles.logoAccent}>FX</span></h1>
           <p className={styles.pageSubtitleText}>Create your account to start learning.</p>
         </div>
 
