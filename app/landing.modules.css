@@ -1,0 +1,296 @@
+/* Custom Properties for EduFX Brand */
+:root {
+    --edu-navy: #1A2B5F;
+    --edu-blue: #1A56DB;
+    --edu-bg: #F9FAFB;
+    --lithium-red: #ff4d4d;
+    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--edu-bg);
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #111827;
+    overflow-x: hidden;
+}
+
+/* 1. Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    background: var(--edu-navy);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.logo {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #FFFFFF;
+    letter-spacing: -1px;
+}
+
+.logo-accent {
+    color: #60A5FA; /* Brighter blue for visibility on navy */
+}
+
+.btn-secondary-outline {
+    padding: 0.5rem 1.5rem;
+    color: #FFFFFF;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+}
+
+.btn-secondary-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+/* 2. Hero Section */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 6rem 5%;
+    gap: 4rem;
+}
+
+.hero-content {
+    flex: 1.2;
+}
+
+.hero-title {
+    font-size: 3.8rem;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    color: var(--edu-navy);
+}
+
+.text-highlight {
+    color: var(--edu-blue);
+}
+
+.hero-description {
+    font-size: 1.2rem;
+    color: #4B5563;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    max-width: 600px;
+}
+
+.btn-hero-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.1rem 2.5rem;
+    background-color: var(--edu-navy);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 50px;
+    transition: var(--transition-smooth);
+}
+
+.btn-hero-primary:hover {
+    background-color: var(--edu-blue);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(26, 86, 219, 0.2);
+}
+
+/* 3. Hero Graphic Area (Chemistry Visuals) */
+.hero-graphic-area {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.s-orbital-sphere {
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(26, 86, 219, 0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: pulse 4s infinite ease-in-out;
+}
+
+.electron-orbit {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 1px dashed rgba(26, 86, 219, 0.2);
+    border-radius: 50%;
+    animation: rotate 12s linear infinite;
+}
+
+.electron {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    background: var(--edu-blue);
+    border-radius: 50%;
+    box-shadow: 0 0 15px var(--edu-blue);
+}
+
+.chemistry-stat-card {
+    position: relative;
+    width: 340px;
+    padding: 2rem;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+    z-index: 2;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.element-box {
+    width: 55px;
+    height: 55px;
+    border: 3px solid var(--lithium-red);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 77, 77, 0.05);
+    margin-right: 15px;
+}
+
+.atomic-number { font-size: 0.7rem; color: var(--lithium-red); font-weight: bold; }
+.element-symbol { font-size: 1.6rem; font-weight: 900; color: var(--edu-navy); }
+
+.status-badge {
+    font-size: 0.75rem;
+    color: #10B981;
+    font-weight: 600;
+}
+
+.progress-bar-container {
+    height: 8px;
+    background: #E5E7EB;
+    border-radius: 10px;
+    margin: 10px 0 20px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    width: 85%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--edu-blue), #60A5FA);
+}
+
+.flame-chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 5px 12px;
+    border-radius: 50px;
+    background: #F3F4F6;
+    margin-right: 8px;
+    border-left: 4px solid var(--lithium-red);
+    color: #4B5563;
+}
+
+/* 4. Bottom Features Section */
+.features {
+    padding: 10rem 5% 8rem;
+    background: var(--edu-navy);
+    clip-path: polygon(0 12%, 100% 0, 100% 100%, 0 100%);
+    margin-top: -60px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    padding: 3rem 2rem;
+    background: #FFFFFF; /* White cards on navy background */
+    border-radius: 24px;
+    transition: var(--transition-smooth);
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.feature-card:hover {
+    transform: translateY(-12px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.icon-wrapper {
+    width: 72px;
+    height: 72px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    background: rgba(26, 86, 219, 0.08);
+    color: var(--edu-blue);
+    margin-bottom: 1.5rem;
+}
+
+.feature-card h3 {
+    color: var(--edu-navy);
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+.feature-card p {
+    color: #4B5563;
+    line-height: 1.6;
+}
+
+/* Animations */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .hero { 
+        flex-direction: column; 
+        text-align: center; 
+        padding-top: 4rem;
+    }
+    .hero-title { font-size: 3rem; }
+    .hero-description { margin: 0 auto 2.5rem; }
+    .features { clip-path: none; padding-top: 5rem; }
+}
