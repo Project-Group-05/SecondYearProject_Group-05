@@ -200,4 +200,20 @@
   display: block;
 }
 
+/* app/(auth)/login/login.module.css */
 
+.errorBanner {
+  background: rgba(239, 68, 68, 0.12);      /* Translucent warning red */
+  border: 1px solid rgba(239, 68, 68, 0.4); /* Striking crimson borders */
+  color: #f87171;                           /* Clear, highly readable light red text */
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);               /* Fits your glassmorphism theme texture */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

@@ -74,7 +74,7 @@ export default function DiagnosticForm() {
 
     // Cache local diagnostic completion context and navigate to dashboard workspace
     localStorage.setItem('diagnostic_completed', 'true');
-    router.push('/dashboard');
+    router.push('/results');
   };
 
   const currentQuestion = questions[currentIndex];

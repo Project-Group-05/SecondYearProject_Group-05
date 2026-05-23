@@ -18,7 +18,7 @@
 }
 
 .logoAccent {
-  color: #60A5FA; /* SAME as landing page */
+  color: #60A5FA; 
 }
 
 
@@ -92,7 +92,7 @@
 }
 
 .fieldErrorText {
-  color: #991B1B; /* Danger Red */ 
+  color: #991B1B; 
   font-size: 0.75rem;
   margin-top: 4px;
   display: block;
@@ -120,4 +120,20 @@
 
 .footer a:hover {
   text-decoration: underline;
+}
+
+.errorBanner {
+  background: rgba(239, 68, 68, 0.12);      
+  border: 1px solid rgba(239, 68, 68, 0.4); 
+  color: #f87171;                           
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);              
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

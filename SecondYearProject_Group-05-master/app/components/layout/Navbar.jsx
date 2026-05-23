@@ -4,24 +4,45 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './Navbar.module.css';
+import { createClient } from '../../utils/supabase/client';
 
 export default function Navbar() {
   const [studentName, setStudentName] = useState('Student');
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    // Access localStorage to get the saved name after login [cite: 14]
-    const savedName = localStorage.getItem('name');
-    if (savedName) {
-      setStudentName(savedName);
+    async function fetchUser() {
+      // 1. Get the current active session user from Supabase Auth
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (user) {
+        // 2. Check for Google OAuth metadata name, then standard registration metadata name
+        const oauthName = user.user_metadata?.full_name;
+        const customRegName = user.user_metadata?.name || user.user_metadata?.full_name;
+        
+        if (oauthName) {
+          setStudentName(oauthName);
+        } else if (customRegName) {
+          setStudentName(customRegName);
+        }
+      } else {
+        // 3. Fallback to localStorage if no Supabase session is present (for old email login test cases)
+        const savedName = localStorage.getItem('name');
+        if (savedName) {
+          setStudentName(savedName);
+        }
+      }
     }
+
+    fetchUser();
   }, []);
 
-  const handleLogout = () => {
-    // --- BACKEND CONNECTION ---
-    // Optional: Call POST /auth/logout if using server-side sessions
+  const handleLogout = async () => {
+    // 🟢 BACKEND CONNECTION FIXED: Sign out of Supabase to clear secure session cookies
+    await supabase.auth.signOut();
     
-    localStorage.clear(); // Clear student_id and name [cite: 4, 185]
+    localStorage.clear(); // Clear local custom items
     router.push('/login'); // Redirect to login page 
   };
 
@@ -29,14 +50,20 @@ export default function Navbar() {
     <nav className={styles.navbar}>
       <div className={styles.navContainer}>
         {/* Logo / App Name  */}
-        <Link href="/dashboard" className={styles.logo}>
-          Adaptive Chemistry
-        </Link>
+        <div>
+            <h1 className={styles.appNameText}>Edu<span className={styles.logoAccent}>FX</span></h1>
+        </div>
 
         {/* Navigation Links [cite: 4, 185] */}
         <div className={styles.navLinks}>
           <Link href="/progress" className={styles.navItem}>
-            My Progress
+            Progress
+          </Link>
+        </div>
+
+        <div className={styles.navLinks}>
+          <Link href="/diagnostic/results" className={styles.navItem}>
+            Results
           </Link>
         </div>
 
@@ -47,11 +74,6 @@ export default function Navbar() {
             Logout
           </button>
         </div>
-        
-        {/* Mobile Menu Icon  */}
-        <button className={styles.mobileMenuIcon} aria-label="Menu">
-          ☰
-        </button>
       </div>
     </nav>
   );
