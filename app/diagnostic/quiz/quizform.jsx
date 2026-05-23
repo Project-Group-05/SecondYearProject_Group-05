@@ -1,46 +1,23 @@
 "use client";
 
-<<<<<<< HEAD
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '../utils/supabase/client'; // Adjust this path if needed
-=======
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../utils/supabase/client'; // Adjust this relative path if your utils folder moves
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
+import { createClient } from '../../utils/supabase/client'; // Adjust this relative path if your utils folder moves
 import styles from './quiz.module.css';
 
 export default function QuizForm({ subtopicId }) {
   const router = useRouter();
   const supabase = createClient();
 
-<<<<<<< HEAD
-  // Hardware Verification States
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const [cameraStatus, setCameraStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-
-  // Core Quiz States
-  const [questions, setQuestions] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
-=======
   // State Hooks
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({}); // e.g., { 0: 'C', 1: 'A' }
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
   const [timeLeft, setTimeLeft] = useState(1200); // 20 minutes countdown
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-<<<<<<< HEAD
-  // 1. Fetch questions from database on mount
-=======
   // 1. Fetch live quiz questions from your Supabase table
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
   useEffect(() => {
     async function fetchQuestions() {
       setIsLoading(true);
@@ -59,26 +36,11 @@ export default function QuizForm({ subtopicId }) {
       setIsLoading(false);
     }
     fetchQuestions();
-<<<<<<< HEAD
-
-    // Cleanup camera streams if the user leaves the page abruptly
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  // 2. Countdown Timer Loop (Only ticks down if camera verification passes!)
-  useEffect(() => {
-    if (isLoading || !questions.length || !isCameraActive) return;
-=======
   }, []);
 
   // 2. Countdown Timer Loop
   useEffect(() => {
     if (isLoading || !questions.length) return;
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
     if (timeLeft <= 0) {
       autoSubmitQuiz();
       return;
@@ -88,36 +50,7 @@ export default function QuizForm({ subtopicId }) {
     }, 1000);
 
     return () => clearInterval(timer);
-<<<<<<< HEAD
-  }, [timeLeft, isLoading, questions.length, isCameraActive]);
-
-  // 3. Hardware Authorization Call
-  const startCameraHardware = async () => {
-    setCameraStatus('loading');
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480, facingMode: "user" } 
-      });
-      
-      streamRef.current = stream;
-      setCameraStatus('success');
-      setIsCameraActive(true);
-
-      // Give React a tiny fraction of a second to render the video tag before binding the stream source
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      }, 50);
-
-    } catch (err) {
-      console.error("Webcam allocation failure:", err);
-      setCameraStatus('error');
-    }
-  };
-=======
   }, [timeLeft, isLoading, questions.length]);
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -134,13 +67,6 @@ export default function QuizForm({ subtopicId }) {
     processSubmission();
   };
 
-<<<<<<< HEAD
-  const processSubmission = async () => {
-    setIsSubmitting(true);
-    let correctCount = 0;
-    const totalQuestionsCount = questions.length;
-
-=======
   // 3. Process Submission & Save straight to your exact database schema layout
   const processSubmission = async () => {
     setIsSubmitting(true);
@@ -149,27 +75,18 @@ export default function QuizForm({ subtopicId }) {
     const totalQuestionsCount = questions.length;
 
     // Evaluate how many selections exactly matched correct_option string flags
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
     questions.forEach((q, idx) => {
       if (selectedAnswers[idx] === q.correct_option) {
         correctCount++;
       }
     });
 
-<<<<<<< HEAD
-=======
     // Calculate score percentage mapping safely
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
     const finalPercentage = totalQuestionsCount > 0 
       ? Math.round((correctCount / totalQuestionsCount) * 100) 
       : 0;
 
     try {
-<<<<<<< HEAD
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error("No active authenticated session discovered.");
-
-=======
       // Fetch current logged in student profile details safely
       const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -178,59 +95,34 @@ export default function QuizForm({ subtopicId }) {
       }
 
       // 🟢 Write straight to your custom data parameters grid layout setup
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
       const { error: insertError } = await supabase
         .from('main_exam_attempts')
         .insert([
           {
-<<<<<<< HEAD
-            student_id: user.id,
-            student_email: user.email,
-            total_questions: totalQuestionsCount,
-            correct_answers: correctCount,
-            score_percentage: finalPercentage,
-            submitted_at: new Date().toISOString()
-=======
             student_id: user.id,                  // Secure profile UUID key tracking
             student_email: user.email,            // Maps to student_email
             total_questions: totalQuestionsCount, // Maps to total_questions
             correct_answers: correctCount,        // Maps to correct_answers
             score_percentage: finalPercentage,   // Maps to score_percentage
             submitted_at: new Date().toISOString() // Maps to submitted_at
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
           }
         ]);
 
       if (insertError) throw insertError;
-<<<<<<< HEAD
-      alert(`Quiz submitted successfully! Performance: ${finalPercentage}%`);
-    } catch (err) {
-      console.error("Submission crash:", err.message);
-      alert(`Could not record your metrics: ${err.message}`);
-    } finally {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-=======
 
       alert(`Quiz submitted successfully! Performance: ${finalPercentage}%`);
     } catch (err) {
       console.error("Database submission storage crash:", err.message);
       alert(`Could not record your metrics: ${err.message}`);
     } finally {
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
       setIsSubmitting(false);
-      router.push('/dashboard');
+      router.push('/diagnostic/results');
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-<<<<<<< HEAD
-    if (confirm("Are you sure you want to finalize and submit your answers?")) {
-=======
     if (confirm("Are you sure you want to finalize and push your answers?")) {
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
       processSubmission();
     }
   };
@@ -238,41 +130,6 @@ export default function QuizForm({ subtopicId }) {
   if (isLoading) return <div className={styles.loadingPlaceholder}>Assembling quiz framework...</div>;
   if (!questions.length) return <div className={styles.loadingPlaceholder}>No quiz questions found in database.</div>;
 
-<<<<<<< HEAD
-  // --- GATEWAY LOOK: If camera is not active yet, show verification gate instead of the quiz questions ---
-  if (!isCameraActive) {
-    return (
-      <div style={gateStyles.card}>
-        <div style={gateStyles.icon}>🔒</div>
-        <h2 style={gateStyles.title}>Proctor Verification Required</h2>
-        <p style={gateStyles.text}>
-          To maintain academic integrity, this exam requires an active webcam feed. 
-          Please enable your device camera to unlock your diagnostic questions.
-        </p>
-        
-        <div style={{ margin: '12px 0', minHeight: '24px', fontSize: '14px' }}>
-          {cameraStatus === 'loading' && <p style={{ color: '#1A56DB' }}>Initializing video framework...</p>}
-          {cameraStatus === 'error' && <p style={{ color: '#EF4444', fontWeight: 'bold' }}>⚠ Camera access denied. Please check your system permission flags.</p>}
-        </div>
-
-        <button
-          type="button"
-          onClick={startCameraHardware}
-          disabled={cameraStatus === 'loading'}
-          style={{
-            ...gateStyles.btn,
-            backgroundColor: cameraStatus === 'loading' ? '#9CA3AF' : '#1A2B5F'
-          }}
-        >
-          {cameraStatus === 'loading' ? 'Connecting...' : 'Authorize & Launch Camera'}
-        </button>
-      </div>
-    );
-  }
-
-  // --- REGULAR LOOK: Render active quiz once camera verification passes ---
-=======
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
 
@@ -282,10 +139,7 @@ export default function QuizForm({ subtopicId }) {
     { key: 'C', text: currentQuestion.option_c },
     { key: 'D', text: currentQuestion.option_d },
   ];
-<<<<<<< HEAD
-=======
 
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
   if (currentQuestion.option_e) {
     availableOptions.push({ key: 'E', text: currentQuestion.option_e });
   }
@@ -299,26 +153,6 @@ export default function QuizForm({ subtopicId }) {
       </div>
 
       <div className={styles.splitContentGrid}>
-<<<<<<< HEAD
-        {/* Proctoring Side Bar Panel showing active live feed */}
-        <aside className={styles.webcamPanel}>
-          <div className={styles.webcamBox}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </div>
-          <div className={styles.proctoringRules}>
-            <p style={{ color: '#059669', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ inlineSize: '8px', blockSize: '8px', backgroundColor: '#10B981', borderRadius: '50%' }}></span> 
-              Monitoring Feed Active
-            </p>
-            <p>• Ensure your face remains entirely visible.</p>
-            <p>• Avoid looking away or swapping browser tabs.</p>
-=======
         {/* Proctoring Side Bar panel */}
         <aside className={styles.webcamPanel}>
           <div className={styles.webcamBox}>
@@ -331,7 +165,6 @@ export default function QuizForm({ subtopicId }) {
           <div className={styles.proctoringRules}>
             <p>• Ensure your face remains entirely visible.</p>
             <p>• Avoid using phones or looking away.</p>
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
           </div>
         </aside>
 
@@ -396,17 +229,4 @@ export default function QuizForm({ subtopicId }) {
       </div>
     </form>
   );
-<<<<<<< HEAD
 }
-
-// Styling objects for the initial verification screen before quiz elements unlock
-const gateStyles = {
-  card: { backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '40px 32px', textAlign: 'center', maxWidth: '540px', margin: '40px auto', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
-  icon: { fontSize: '48px', marginBottom: '16px' },
-  title: { fontSize: '24px', fontWeight: 'bold', color: '#1A2B5F', margin: '0 0 12px 0' },
-  text: { fontSize: '15px', color: '#4B5563', lineHeight: '1.6', margin: '0 0 20px 0' },
-  btn: { color: '#FFFFFF', padding: '14px 28px', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }
-};
-=======
-}
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e

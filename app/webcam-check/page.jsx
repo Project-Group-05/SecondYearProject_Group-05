@@ -1,7 +1,12 @@
 "use client";
 
+<<<<<<< HEAD
 import React, { useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+=======
+import React, { useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
 import styles from './webcam.module.css';
 
 const LocalButton = ({ label, onClick, disabled }) => (
@@ -17,14 +22,19 @@ const LocalButton = ({ label, onClick, disabled }) => (
       cursor: disabled ? 'not-allowed' : 'pointer',
       fontSize: '16px',
       fontWeight: 'bold',
+<<<<<<< HEAD
       width: '100%',
       transition: 'background-color 0.2s ease'
+=======
+      width: '100%'
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
     }}
   >
     {label}
   </button>
 );
 
+<<<<<<< HEAD
 function WebcamCheckContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,17 +43,36 @@ function WebcamCheckContent() {
   const streamRef = useRef(null); 
 
   // Pulls the dynamic chemistry task ID from the URL parameters
+=======
+export default function WebcamCheck() {
+  const searchParams = useSearchParams();
+  const [status, setStatus] = useState('idle');
+  const videoRef = useRef(null); // Reference to hold our video element instance
+  const streamRef = useRef(null); // Keep a reference to stop the stream if needed later
+
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
   const taskId = searchParams.get('taskId');
 
   const requestCamera = async () => {
     setStatus('loading');
     try {
+<<<<<<< HEAD
+=======
+      // 1. Request access to the video hardware stream
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { width: 1280, height: 720, facingMode: "user" } 
       });
       
+<<<<<<< HEAD
       streamRef.current = stream;
 
+=======
+      // 2. Keep track of the stream instance globally in the component
+      streamRef.current = stream;
+
+      // 3. Mount the stream directly into our video element source
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setStatus('success');
@@ -54,6 +83,7 @@ function WebcamCheckContent() {
     }
   };
 
+<<<<<<< HEAD
   // Navigates directly into the chemistry diagnostic quiz page layout
   const handleStartQuiz = () => {
     // Shuts down hardware recording indicators before shifting page paths
@@ -65,13 +95,21 @@ function WebcamCheckContent() {
     router.push(`/quiz?subtopicId=${taskId || '1'}`);
   };
 
+=======
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
   return (
     <div className={styles.container}>
       <div className={styles.card} style={{ maxWidth: '500px', width: '100%' }}>
         <div className={styles.iconCircle}>📷</div>
+<<<<<<< HEAD
         <h1 className={styles.title}>Identity & Environment Check</h1>
         <p className={styles.description}>
           Please enable your camera feed to begin your chemistry diagnostic test for Task #{taskId || "None Selected"}.
+=======
+        <h1 className={styles.title}>Webcam Verification</h1>
+        <p className={styles.description}>
+          Please enable your camera feed to begin your study session for Task #{taskId || "None Selected"}.
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
         </p>
 
         {/* --- Live Video Feed Frame Container --- */}
@@ -97,6 +135,7 @@ function WebcamCheckContent() {
 
         <div className={styles.statusBox} style={{ margin: '8px 0' }}>
           {status === 'loading' && <p>Requesting hardware permission...</p>}
+<<<<<<< HEAD
           {status === 'success' && <p style={{color: 'green', fontWeight: 'bold'}}>✓ Integrity Check Passed</p>}
           {status === 'error' && <p style={{color: 'red', fontWeight: 'bold'}}>⚠ Camera access denied or not found.</p>}
         </div>
@@ -116,11 +155,23 @@ function WebcamCheckContent() {
             />
           )}
         </div>
+=======
+          {status === 'success' && <p style={{color: 'green', fontWeight: 'bold'}}>✓ Camera Live Feed Active</p>}
+          {status === 'error' && <p style={{color: 'red', fontWeight: 'bold'}}>⚠ Camera access denied or not found.</p>}
+        </div>
+
+        <LocalButton 
+          label={status === 'loading' ? "Connecting..." : status === 'success' ? "Camera Active" : "Enable Camera"} 
+          onClick={requestCamera} 
+          disabled={status === 'success' || status === 'loading'}
+        />
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
       </div>
     </div>
   );
 }
 
+<<<<<<< HEAD
 // Default page wrapper satisfying Next.js Suspense boundary parsing conditions for query tracking
 export default function WebcamCheck() {
   return (
@@ -130,6 +181,9 @@ export default function WebcamCheck() {
   );
 }
 
+=======
+// Inline styles designed to blend perfectly with your corporate blue theme layout structure
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
 const videoContainerStyle = {
   width: '100%',
   height: '260px',
@@ -151,4 +205,8 @@ const placeholderStyle = {
   color: '#94A3B8',
   fontSize: '14px',
   fontWeight: '500'
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e

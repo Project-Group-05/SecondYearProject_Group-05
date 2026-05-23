@@ -18,7 +18,11 @@
 }
 
 .logoAccent {
+<<<<<<< HEAD
   color: #60A5FA; /* SAME as landing page */
+=======
+  color: #60A5FA; 
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
 }
 
 
@@ -92,7 +96,11 @@
 }
 
 .fieldErrorText {
+<<<<<<< HEAD
   color: #991B1B; /* Danger Red */ 
+=======
+  color: #991B1B; 
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
   font-size: 0.75rem;
   margin-top: 4px;
   display: block;
@@ -136,4 +144,8 @@
   gap: 8px;
   backdrop-filter: blur(8px);               /* Fits your glassmorphism theme texture */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e

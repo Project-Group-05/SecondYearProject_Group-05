@@ -1,0 +1,100 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 10px 0;
+}
+
+.sectionZone {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sectionHeader {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+/* 💡 HIGHLIGHT CARD FIX: Leverages glassmorphism and crisp borders to pop out from matching backgrounds */
+.card {
+  background-color: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  
+  /* Semi-transparent border + explicit navy left stripe to add depth contrast */
+  border: 1px solid rgba(26, 43, 95, 0.12);
+  border-left: 6px solid #1a2b5f;
+  
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  justify-content: space-between;
+  
+  /* Soft double-layered shadow effect lifts card off the screen layer */
+  box-shadow: 0 4px 14px rgba(26, 43, 95, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(26, 43, 95, 0.1);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.groupBadge {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #111827;
+  line-height: 1.45;
+}
+
+.btnPrimary {
+  background-color: #1a2b5f;
+  color: #ffffff;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.btnPrimary:hover {
+  background-color: #111d42;
+}
+
+.loadingText {
+  color: #6b7280;
+  padding: 20px;
+  font-size: 15px;
+}
