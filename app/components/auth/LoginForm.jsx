@@ -149,8 +149,4 @@ export default function LoginForm() {
       </div>
     </form>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e
