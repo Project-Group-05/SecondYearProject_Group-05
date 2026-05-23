@@ -25,7 +25,7 @@ export default function QuizForm({ subtopicId }) {
         .from('main_exam_questions')
         .select('*')
         .gte('id', 1)
-        .lte('id', 40)
+        .lte('id', 65)
         .order('id', { ascending: true });
 
       if (!error && data) {
@@ -138,12 +138,10 @@ export default function QuizForm({ subtopicId }) {
     { key: 'B', text: currentQuestion.option_b },
     { key: 'C', text: currentQuestion.option_c },
     { key: 'D', text: currentQuestion.option_d },
+    { key: 'E', text: currentQuestion.option_e },
   ];
 
-  if (currentQuestion.option_e) {
-    availableOptions.push({ key: 'E', text: currentQuestion.option_e });
-  }
-
+ 
   return (
     <form onSubmit={handleSubmit} className={styles.quizFormLayout}>
       {/* Timer Element */}
