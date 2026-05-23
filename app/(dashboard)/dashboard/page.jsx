@@ -1,5 +1,7 @@
 // app/dashboard/page.js
+'use client';
 
+import { useRouter } from 'next/navigation';
 import StudyPlanSection from '../../components/dashboard/StudyPlanSection';
 import ProgressOverview from '../../components/dashboard/ProgressOverview';
 
@@ -8,6 +10,12 @@ export default function DashboardPage() {
      Fetch student dashboard data here using a Server Action or fetch().
      Example: const data = await fetchDashboardData(student_id);
   */
+ const router = useRouter();
+
+  const handleViewFullProgress = () => {
+    // This pushes the user straight to your progress route
+    router.push('/progress');
+  };
 
   return (
     <div style={styles.dashboardContainer}>
@@ -17,7 +25,12 @@ export default function DashboardPage() {
         <section>
           <div style={styles.headerGroup}>
             <h1 style={styles.pageTitle}>Today's Study Plan</h1>
-            <p style={styles.subtitle}>Saturday, April 11, 2026</p> 
+            <p style={styles.subtitle}>{new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',})}
+            </p> 
           </div>
           <StudyPlanSection />
         </section>
@@ -27,7 +40,7 @@ export default function DashboardPage() {
         <section>
           <div style={styles.headerGroupRow}>
             <h2 style={styles.sectionTitle}>Your Progress Overview</h2>
-            <button style={styles.btnSecondarySmall}>View Full Progress</button>
+            <button style={styles.btnSecondarySmall} onClick={handleViewFullProgress}>View Full Progress</button>
           </div>
           <ProgressOverview />
         </section>

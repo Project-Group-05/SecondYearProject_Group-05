@@ -1,80 +1,80 @@
+// components/auth/LoginForm.jsx
 "use client";
 
 import { useState } from 'react';
-import styles from '../../(auth)/login/login.module.css';
+import styles from '../../(auth)/login/login.module.css'; // Make sure this path correctly hits your CSS module location
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FcGoogle } from "react-icons/fc";
+import { loginStudent } from '../../utils/supabase/actions'; 
+import { createClient } from '../../utils/supabase/client';
 
 export default function LoginForm() {
   const router = useRouter();
+  const supabase = createClient();
+  
+  // These hooks must stay right here inside the functional block component
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const [serverError, setServerError] = useState(''); 
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleClick = async () => {
+    setServerError('');
     setIsLoading(true);
-    try {
-      /* 
-        1. Trigger Auth Provider (Supabase / Firebase Client SDK)
-        Example for Supabase client:
-        const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
-        const idToken = data.session?.access_token;
-      */
-      const idToken = "MOCK_TOKEN_FROM_PROVIDER"; // Replace with your live SDK token extraction logic
 
-      // 2. Send Token to your FastAPI Backend
-     // Change from 127.0.0.1 to localhost
-const response = await fetch('http://localhost:8000/auth/google', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        }
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // Supabase redirects back here after the user logs into Google
+          // window.location.origin dynamically becomes http://localhost:3000 in dev
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
-      const result = await response.json();
-
-      // FIX #1: Match backend response schema (.success instead of .status)
-      if (result.success) {
-        // FIX #2: Store the token so subsequent endpoints can use it for Authorization headers
-        localStorage.setItem('access_token', idToken);
-        localStorage.setItem('student_id', result.data.student_id);
-        
-        // Redirect seamlessly based on backend database diagnostic tracking
-        if (result.data.diagnostic_completed) {
-          router.push('/dashboard');
-        } else {
-          router.push('/diagnostic-test');
-        }
-      } else {
-        console.error("Backend Auth Rejected:", result.message);
+      if (error) {
+        setServerError(error.message);
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Google Auth Error:", error);
-    } finally {
+      // Note: If successful, the browser will automatically navigate away to Google's login screen.
+    } catch (err) {
+      console.error("Google login initiation crash:", err);
+      setServerError("Could not connect to Google sign-in.");
       setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError('');
     setIsLoading(true);
 
     try {
-      console.log("Logging in with standard credentials:", email);
+      console.log("Attempting login for:", email);
       
-      /* TODO: Integrate standard login logic here if needed:
-         const idToken = await signInWithEmailAndPassword(auth, email, password);
-      */
-      
-      router.push('/dashboard'); 
-      
+      // 1. Pack the form inputs into native FormData for the Server Action
+      const rawFormData = new FormData();
+      rawFormData.append('email', email);
+      rawFormData.append('password', password);
+
+      // 2. Call the backend login action from utils/supabase/actions.ts
+      const result = await loginStudent(rawFormData);
+
+      // 3. Handle the response schema
+      if (result?.error) {
+        // This captures 'Invalid email or password!' and updates the state
+        setServerError(result.error);
+      } else if (result?.success) {
+        // If successful, redirect the user seamlessly to the dashboard
+        router.push('/dashboard'); 
+      }
     } catch (error) {
-      console.error("Login failed:", error.message);
+      console.error("Login submission execution error:", error);
+      setServerError("An unexpected runtime connection error occurred.");
     } finally {
       setIsLoading(false);
     }
@@ -84,10 +84,18 @@ const response = await fetch('http://localhost:8000/auth/google', {
     email.includes('@') &&
     password.length >= 6 &&
     !emailError &&
-    !passwordError;
+    !passwordError &&
+    !isLoading;
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
+      {serverError && (
+      <div className={styles.errorBanner}>
+        <span>⚠️</span>
+        <span>{serverError}</span>
+      </div>
+    )}
+
       <div className={styles.inputGroup}>
         <label>Email</label>
         <input 
@@ -120,13 +128,12 @@ const response = await fetch('http://localhost:8000/auth/google', {
         {passwordError && <small className={styles.fieldErrorText}>Password must be at least 6 characters</small>}
       </div>
 
-      <button type="submit" className={styles.loginBtn} disabled={!isFormValid || isLoading}>
+      <button type="submit" className={styles.loginBtn} disabled={!isFormValid}>
         {isLoading ? 'Processing...' : 'Sign In'}
       </button>
 
       <div className={styles.divider}><span>OR</span></div>
 
-      {/* FIX #3: Set type="button" explicitly so it doesn't fire the standard HTML form submission handler */}
       <button 
         type="button"
         className={styles.googleBtn} 

@@ -27,7 +27,7 @@ export default function DiagnosticPage() {
         
         <button 
           className={styles.mainButton} 
-          onClick={() => router.push('/diagnostic/results')}
+          onClick={() => router.push('/diagnostic/quiz')}
         >
           Start Assessment
         </button>
