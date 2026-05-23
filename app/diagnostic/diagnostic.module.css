@@ -1,0 +1,139 @@
+.container {
+  max-width: 800px;
+  margin: 60px auto; /* Centers the whole page on the screen */
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers the title and subtitle */
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.title {
+  color: #1A2B5F;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #6B7280;
+  font-size: 16px;
+}
+
+.scoreBanner {
+  background: #F3F4F6;
+  padding: 30px;
+  border-radius: 16px;
+  margin-bottom: 40px;
+  border: 1px solid #E5E7EB;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scoreLabel {
+  font-size: 14px;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.scoreValue {
+  margin: 5px 0 0 0;
+  color: #1A56DB;
+  font-size: 42px;
+  font-weight: 800;
+}
+
+.grid {
+  display: grid;
+  /* This creates 2 equal columns side-by-side */
+  grid-template-columns: 1fr 1fr; 
+  gap: 20px;
+  margin-top: 30px;
+  width: 100%;
+}
+
+.topicCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  background: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.topicCard:hover {
+  transform: translateY(-2px);
+}
+
+.topicName {
+  font-weight: 600;
+  color: #1A2B5F;
+  font-size: 16px;
+}
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 100px;
+  text-align: center;
+}
+
+.footer {
+  margin-top: 60px;
+  text-align: center;
+}
+
+.mainButton {
+  background-color: #1A2B5F;
+  color: white;
+  padding: 16px 36px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(26, 43, 95, 0.2);
+}
+
+.mainButton:hover {
+  background-color: #2a3e82;
+  box-shadow: 0 6px 12px rgba(26, 43, 95, 0.3);
+}
+
+.card {
+  background: white;
+  border: 1px solid #E5E7EB;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); /* Soft shadow for depth */
+  text-align: center; /* Centers the icon, heading, and text */
+  width: 100%; /* Makes the box look neat and full */
+  margin-top: 20px;
+}
+
+/* Ensure the text inside the card doesn't touch the edges */
+.card p {
+  color: #4B5563;
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto 30px auto; 
+}
+
+/* This makes sure the page stays neat even on small phone screens */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr; /* On mobile, go back to 1 column */
+  }
+}
