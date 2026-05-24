@@ -32,10 +32,17 @@
   letter-spacing: 0.05em;
 }
 
-.subtopicHeader {
-  font-size: 1.25rem;
-  margin: 0;
-  font-weight: 600;
+.logoAccent {
+  color: #60A5FA; 
+}
+
+.appNameText {
+  color: white; 
+  font-size: 2rem; 
+  font-weight: 900; 
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+  text-align: center;
 }
 
 .workspaceLayout {

@@ -29,7 +29,7 @@ export default function LandingPage() {
           </p>
           <div className="hero-actions">
             <Link href="/register" className="btn-hero-primary">
-              Get Start<Zap size={20} fill="currentColor" />
+              Get Started<Zap size={20} fill="currentColor" />
             </Link>
           </div>
         </div>
