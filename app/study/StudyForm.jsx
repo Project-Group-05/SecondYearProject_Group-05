@@ -41,7 +41,7 @@ export default function StudyForm() {
       // Payload: { student_id: localStorage.getItem('id'), current_track: 'Group 1' }
       // --- BACKEND CONNECTION END ---
       
-      window.location.href = '/quiz'; 
+      window.location.href = '/modulequiz'; 
     }
   };
 

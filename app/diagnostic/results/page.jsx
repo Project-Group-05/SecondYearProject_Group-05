@@ -27,37 +27,27 @@ function DiagnosticContent() {
         // A. Identify active frontend authentication context
         const { data: userData } = await supabase.auth.getUser();
         const user = userData?.user;
-        console.log("👤 Authenticated student session ID:", user?.id || "None (Local Test Mode)");
+        if (!user) throw new Error("No active authenticated session discovered.");
+        
+        console.log("👤 Authenticated student session ID:", user.id);
 
         let overallScore = 0;
         
-        // B. Fetch score records from database
+        // B. Fetch score records from main_exam_attempts
         let attemptQuery = supabase.from('main_exam_attempts').select('id, score_percentage');
 
         if (attemptId) {
-          // Look up specific row if unique parameters were sent through the navigation router
           attemptQuery = attemptQuery.eq('id', attemptId);
-        } else if (user) {
-          // Pull rows matching active logged-in student, sorted strictly by submitted_at timestamp sequence
-          attemptQuery = attemptQuery.eq('student_id', user.id).order('submitted_at', { ascending: false }).limit(1);
         } else {
-          // General fallback: if no user is found, grab the last added row from the table for testing
-          attemptQuery = attemptQuery.order('submitted_at', { ascending: false }).limit(1);
+          attemptQuery = attemptQuery.eq('student_id', user.id).order('submitted_at', { ascending: false }).limit(1);
         }
 
         const { data: attemptData, error: attemptError } = await attemptQuery;
-        
-        if (attemptError) {
-          console.error("⚠️ Query execution failed:", attemptError.message);
-        }
-        
-        // 💡 DEBUG LOG: Inspect this list structure in your browser dev tools if percentages read wrong
-        console.log("📊 Raw data payload returned from Supabase:", attemptData);
+        if (attemptError) throw attemptError;
 
         if (attemptData && attemptData.length > 0) {
           overallScore = attemptData[0].score_percentage !== undefined ? attemptData[0].score_percentage : 0;
         }
-
         console.log("🎯 Evaluated benchmark score percentage:", overallScore + "%");
 
         // C. Fetch all available standard chemistry subtopic rows dynamically from database
@@ -69,25 +59,32 @@ function DiagnosticContent() {
         if (subtopicsError) throw subtopicsError;
         console.log(`✅ Loaded ${subtopicsList?.length || 0} subtopics from database.`);
 
-        // D. Calculate level variations for each subtopic centered around their overall exam score
-        const computedTopics = (subtopicsList || []).map((topic, index) => {
-          let calculatedLevel = "Beginner";
-          
-          // Distributes varying level attributes based on absolute performance metrics
-          const performanceWeight = (Number(overallScore) + (index * 7) % 25) - 10;
+        // 🟢 D1. NEW FIX: Fetch the true, calculated level data directly from your database view matrix
+        const { data: realCalculatedLevels, error: viewError } = await supabase
+          .from('v_student_subtopic_levels')
+          .select('subtopic_id, current_level')
+          .eq('student_id', user.id);
 
-          if (performanceWeight >= 75) {
-            calculatedLevel = "Advanced";
-          } else if (performanceWeight >= 45) {
-            calculatedLevel = "Intermediate";
-          }
+        if (viewError) {
+          console.warn("⚠️ View retrieval failed, falling back to basic checks:", viewError.message);
+        }
 
-          const UIStyles = getLevelUIProperties(calculatedLevel);
+        // Convert the view rows to a clear object map for instant indexing searches
+        const levelsMap = {};
+        realCalculatedLevels?.forEach(row => {
+          levelsMap[row.subtopic_id] = row.current_level;
+        });
+
+        // D2. Map the subtopics array to compile the full visual diagnostic nodes profile
+        const computedTopics = (subtopicsList || []).map((topic) => {
+          // 🟢 FIXED: Grab their actual real database level. Fall back to 'Beginner' if they haven't taken it.
+          const trueLevel = levelsMap[topic.id] || "Beginner";
+          const UIStyles = getLevelUIProperties(trueLevel);
 
           return {
             id: topic.id,
             name: topic.title,
-            level: calculatedLevel,
+            level: trueLevel,
             color: UIStyles.color,
             bg: UIStyles.bg
           };
@@ -131,7 +128,7 @@ function DiagnosticContent() {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1 className={styles.title}>Your Diagnostic Profile</h1>
+        <h1 className={styles.title}>Evaluation Test Results</h1>
         <p className={styles.subtitle}>Based on your performance, we've identified your level for each subtopic.</p>
       </header>
       
@@ -159,7 +156,7 @@ function DiagnosticContent() {
           className={styles.mainButton}
           onClick={() => router.push('/dashboard')}
         >
-          Go to Personalized Dashboard
+          Back to Dashboard
         </button>
       </footer>
     </div>

@@ -16,7 +16,7 @@ export default function QuizPage() {
       {/* Main Core Layout Grid */}
       <div className={styles.workspaceLayout}>
         {/* 2. Capitalized tag makes your editor linter completely happy! */}
-        <QuizForm subtopicId="group-trends" /> 
+        <QuizForm/> 
       </div>
     </main>
   );

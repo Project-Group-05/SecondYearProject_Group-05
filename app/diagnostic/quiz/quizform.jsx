@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '../../utils/supabase/client'; // Adjust this path if needed
 import styles from './quiz.module.css';
 
-export default function QuizForm({ subtopicId }) {
+export default function QuizForm() {
   const router = useRouter();
   const supabase = createClient();
 
@@ -38,7 +38,7 @@ export default function QuizForm({ subtopicId }) {
         .from('main_exam_questions')
         .select('*')
         .gte('id', 1)
-        .lte('id', 65)
+        .lte('id', 10)
         .order('id', { ascending: true });
 
       if (!error && data) {
@@ -161,7 +161,7 @@ export default function QuizForm({ subtopicId }) {
           student_answer: studentAnswer,
           correct_answer: question.correct_option,
           is_correct: isCorrect,
-          explanation: question.explanation || null
+          
         };
       });
 
@@ -223,10 +223,10 @@ export default function QuizForm({ subtopicId }) {
   // --- GATEWAY LOOK: Proctor Verification Required ---
   if (!isCameraActive) {
     return (
-      <div style={gateStyles.card}>
-        <div style={gateStyles.icon}>🔒</div>
-        <h2 style={gateStyles.title}>Webcam Activation Required</h2>
-        <p style={gateStyles.text}>
+      <div className={styles.gateCard}>
+        <div className={styles.gateIcon}>🔒</div>
+        <h2 className={styles.gateTitle}>Webcam Activation Required</h2>
+        <p className={styles.gateText}>
           This exam requires an active webcam feed. 
           Please enable your device camera!
         </p>
@@ -240,8 +240,8 @@ export default function QuizForm({ subtopicId }) {
           type="button"
           onClick={startCameraHardware}
           disabled={cameraStatus === 'loading'}
+          className={styles.gateBtn}
           style={{
-            ...gateStyles.btn,
             backgroundColor: cameraStatus === 'loading' ? '#9CA3AF' : '#1A2B5F'
           }}
         >
@@ -433,13 +433,7 @@ export default function QuizForm({ subtopicId }) {
 }
 
 // Global style mappings retain perfect styling standards
-const gateStyles = {
-  card: { backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '40px 32px', textAlign: 'center', maxWidth: '540px', margin: '40px auto', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
-  icon: { fontSize: '48px', marginBottom: '16px' },
-  title: { fontSize: '24px', fontWeight: 'bold', color: '#1A2B5F', margin: '0 0 12px 0' },
-  text: { fontSize: '15px', color: '#4B5563', lineHeight: '1.6', margin: '0 0 20px 0' },
-  btn: { color: '#FFFFFF', padding: '14px 28px', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }
-};
+
 
 const modalStyles = {
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' },
