@@ -1,10 +1,8 @@
-// components/auth/RegisterForm.tsx
 "use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { registerStudent } from '../../utils/supabase/actions';
 import styles from '../../(auth)/register/register.module.css';
 
 export default function RegisterForm() {
@@ -38,6 +36,57 @@ export default function RegisterForm() {
     validate(name, value);
   };
 
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setServerError('');
+  setIsLoading(true);
+
+  console.log("Sending to Python: " + formData.email);
+
+  try {
+    const BACKEND_URL = "http://127.0.0.1:8000";
+
+    const response = await fetch(`${BACKEND_URL}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+        fullName: formData.fullName,
+      }),
+    });
+
+    const result = await response.json();
+    setIsLoading(false);
+
+    console.log("Backend response received:", result);
+
+    if (!response.ok || result.success === false) {
+      setServerError(result.message || "Registration failed.");
+    } else {
+      localStorage.setItem('student', JSON.stringify({
+  id: result.data.id,
+  email: result.data.email,
+  name: result.data.name,
+  diagnostic_completed: result.data.diagnostic_completed,
+  access_token: result.data.access_token,
+}));
+localStorage.setItem('access_token', result.data.access_token);
+localStorage.setItem('student_id', result.data.id);
+   
+
+      console.log("Registration successful! Redirecting...");
+      router.push('/diagnostic');
+    }
+  } catch (err) {
+    setIsLoading(false);
+    setServerError("Could not reach the authentication server.");
+    console.error("Signup network error:", err);
+  }
+};
+
   const isFormValid = 
     formData.fullName.length >= 2 && 
     formData.email.includes('@') && 
@@ -45,32 +94,8 @@ export default function RegisterForm() {
     formData.password === formData.confirmPassword &&
     !isLoading;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setServerError('');
-    setIsLoading(true);
-
-    // Prepare native form data for the Server Action
-    const rawFormData = new FormData();
-    rawFormData.append('fullName', formData.fullName);
-    rawFormData.append('email', formData.email);
-    rawFormData.append('password', formData.password);
-
-    const result = await registerStudent(rawFormData);
-
-    setIsLoading(false);
-
-    if (result?.error) {
-      setServerError(result.error);
-    } else if (result?.success) {
-      // Instead of relying on localStorage, Supabase cookies manage session data safely.
-      // Redirect to your diagnostic phase directly.
-      router.push('/diagnostic');
-    }
-  };
-
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
+    <form className={styles.form} onSubmit={handleSubmit} autoComplete="off">
        {serverError && (
             <div className={styles.errorBanner}>
               <span>⚠️</span>

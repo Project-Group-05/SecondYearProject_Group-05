@@ -2,16 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../../utils/supabase/client'; // Adjust this path if needed
 import styles from './quiz.module.css';
 
 export default function QuizForm() {
   const router = useRouter();
-  const supabase = createClient();
 
   // Hardware Verification States
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [cameraStatus, setCameraStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [cameraStatus, setCameraStatus] = useState('idle');
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -19,34 +17,35 @@ export default function QuizForm() {
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(4500); // 75 minutes countdown
+  const [timeLeft, setTimeLeft] = useState(4500);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
 
   // Controls the custom centered confirmation dialog box
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Controls the custom post-submit results dialog box
-  const [quizResult, setQuizResult] = useState(null); 
+  const [quizResult, setQuizResult] = useState(null);
 
-  // 1. Fetch questions from database on mount
+  // 1. Fetch questions from FastAPI backend on mount
   useEffect(() => {
     async function fetchQuestions() {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('main_exam_questions')
-        .select('*')
-        .gte('id', 1)
-        .lte('id', 10)
-        .order('id', { ascending: true });
+      try {
+        const response = await fetch('http://localhost:8000/diagnostic/questions');
+        const resData = await response.json();
 
-      if (!error && data) {
-        setQuestions(data);
-      } else {
-        console.error("Error fetching question records:", error?.message);
+        // Unwraps from your success_response utility wrapper: { success, data: { questions } }
+        if (resData.success && resData.data?.questions) {
+          setQuestions(resData.data.questions);
+        } else {
+          console.error("Error fetching question records:", resData.message);
+        }
+      } catch (err) {
+        console.error("Network failure gathering diagnostic records from FastAPI:", err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     fetchQuestions();
 
@@ -61,13 +60,12 @@ export default function QuizForm() {
   // 2. Countdown Timer Loop
   useEffect(() => {
     if (isLoading || !questions.length || !isCameraActive || quizResult) return;
-    
-    // 🌟 AUTOMATIC SUBMISSION TRIGGER CHECK
+
     if (timeLeft <= 0) {
       autoSubmitQuiz();
       return;
     }
-    
+
     const timer = setInterval(() => {
       setTimeLeft(prev => prev - 1);
     }, 1000);
@@ -79,10 +77,10 @@ export default function QuizForm() {
   const startCameraHardware = async () => {
     setCameraStatus('loading');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480, facingMode: "user" } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: "user" }
       });
-      
+
       streamRef.current = stream;
       setCameraStatus('success');
       setIsCameraActive(true);
@@ -110,13 +108,9 @@ export default function QuizForm() {
     setSelectedAnswers(prev => ({ ...prev, [currentIndex]: optionLetter }));
   };
 
-  // 🌟 FEATURE UPDATE: Handles structural auto-submission cleanly when timer runs dry
   const autoSubmitQuiz = () => {
-    // Closes confirmation query box if it was open when time expired
-    setShowConfirmModal(false); 
-    
-    // Directly process database operations and open score modal layout frames
-    executeDatabaseWrite(true); 
+    setShowConfirmModal(false);
+    executeDatabaseWrite(true);
   };
 
   const openConfirmationModal = (e) => {
@@ -124,86 +118,62 @@ export default function QuizForm() {
     setShowConfirmModal(true);
   };
 
-  // Core transactional writing operations logic
+  // Centralized submission dispatcher hitting FastAPI
   const executeDatabaseWrite = async (isForcedByTimeout = false) => {
-    setShowConfirmModal(false); 
+    setShowConfirmModal(false);
     setIsSubmitting(true);
-    let correctCount = 0;
-    const totalQuestionsCount = questions.length;
-
-    questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correct_option) {
-        correctCount++;
-      }
-    });
-
-    const finalPercentage = totalQuestionsCount > 0 
-      ? Math.round((correctCount / totalQuestionsCount) * 100) 
-      : 0;
 
     try {
-      // Fetch user data right at submission runtime
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData?.user) throw new Error("No active authenticated session discovered.");
-      const user = userData.user;
+      // Still using Supabase auth client-side ONLY to retrieve user identity for the payload
+       const stored = localStorage.getItem('student');
+    if (!stored) throw new Error("No active authenticated session discovered.");
+    const user = JSON.parse(stored);
 
-      console.log("🔗 Executing unified transactional updates...");
+    const formattedAnswers = questions.map((question, idx) => ({
+      question_id: question.id,
+      student_answer: selectedAnswers[idx] || ""
+      }));
 
-      // Step A: Format and bulk-insert data to quiz_attempts breakdown table
-      const attemptsToInsert = questions.map((question, idx) => {
-        const studentAnswer = selectedAnswers[idx] || null;
-        const isCorrect = studentAnswer === question.correct_option; 
+      // Matches your DiagnosticSubmit Pydantic model: student_id, student_email, answers
+      const payload = {
+        student_id: user.id,
+        student_email: user.email,
+        answers: formattedAnswers
+      };
 
-        return {
-          student_id: user.id,                  // Structural alignment fallback value
-          question_id: question.id,          
-          subtopic_id: question.subtopic_id, 
-          student_answer: studentAnswer,
-          correct_answer: question.correct_option,
-          is_correct: isCorrect,
-          
-        };
+      const backendResponse = await fetch('http://localhost:8000/diagnostic/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
       });
 
-      const { error: attemptsError } = await supabase
-        .from('quiz_attempts')
-        .insert(attemptsToInsert);
+      const resultData = await backendResponse.json();
 
-      if (attemptsError) throw attemptsError;
-      console.log("🎉 Part 1 Complete: Breakdowns loaded to quiz_attempts!");
+      if (!backendResponse.ok || !resultData.success) {
+        throw new Error(resultData.message || "Failed processing submission payload through FastAPI.");
+      }
 
-      // Step B: Insert general high-level performance logs into main_exam_attempts
-      const { error: insertError } = await supabase
-        .from('main_exam_attempts')
-        .insert([
-          {
-            student_id: user.id,
-            student_email: user.email,
-            total_questions: totalQuestionsCount,
-            correct_answers: correctCount,
-            score_percentage: finalPercentage,
-            submitted_at: new Date().toISOString()
-          }
-        ]);
+      // Drills into: { success, data: { results: { total_questions, correct_answers, score_percentage } } }
+      const reportSummary = resultData.data.results;
 
-      if (insertError) throw insertError;
-          console.log("🏆 Part 2 Complete: Total metrics saved to main_exam_attempts!");
-      // Shutdown local hardware camera stream indications safely
+      // Stop local webcam stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
-      
-      // Mount final scoring metrics and identify if submission was automated or manual
+
+      // Map backend score fields to UI result state
       setQuizResult({
-        correct: correctCount,
-        total: totalQuestionsCount,
-        percentage: finalPercentage,
+        correct: reportSummary.correct_answers,
+        total: reportSummary.total_questions,
+        percentage: reportSummary.score_percentage,
         wasAutomated: isForcedByTimeout
       });
 
     } catch (err) {
       console.error("Submission crash:", err.message);
-      alert(`Could not record your metrics: ${err.message}`);
+      console.error(`Could not record your metrics: ${err.message}`);
       router.push('/dashboard');
     } finally {
       setIsSubmitting(false);
@@ -213,9 +183,6 @@ export default function QuizForm() {
   const handleExitQuiz = () => {
     router.push('/diagnostic/results');
   };
-
-  
-  
 
   if (isLoading) return <div className={styles.loadingPlaceholder}>Assembling quiz framework...</div>;
   if (!questions.length) return <div className={styles.loadingPlaceholder}>No quiz questions found in database.</div>;
@@ -227,10 +194,10 @@ export default function QuizForm() {
         <div className={styles.gateIcon}>🔒</div>
         <h2 className={styles.gateTitle}>Webcam Activation Required</h2>
         <p className={styles.gateText}>
-          This exam requires an active webcam feed. 
+          This exam requires an active webcam feed.
           Please enable your device camera!
         </p>
-        
+
         <div style={{ margin: '12px 0', minHeight: '24px', fontSize: '14px' }}>
           {cameraStatus === 'loading' && <p style={{ color: '#1A56DB' }}>Initializing video framework...</p>}
           {cameraStatus === 'error' && <p style={{ color: '#EF4444', fontWeight: 'bold' }}>⚠ Camera access denied. Please check your system permission flags.</p>}
@@ -260,8 +227,7 @@ export default function QuizForm() {
     { key: 'C', text: currentQuestion.option_c },
     { key: 'D', text: currentQuestion.option_d },
     { key: 'E', text: currentQuestion.option_e }
-  ];
- 
+  ].filter(opt => opt.text);
 
   return (
     <form onSubmit={openConfirmationModal} className={styles.quizFormLayout}>
@@ -287,7 +253,7 @@ export default function QuizForm() {
           </div>
           <div className={styles.proctoringRules}>
             <p style={{ color: quizResult ? '#6B7280' : '#059669', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ inlineSize: '8px', blockSize: '8px', backgroundColor: quizResult ? '#9CA3AF' : '#10B981', borderRadius: '50%' }}></span> 
+              <span style={{ inlineSize: '8px', blockSize: '8px', backgroundColor: quizResult ? '#9CA3AF' : '#10B981', borderRadius: '50%' }}></span>
               {quizResult ? 'Monitoring Feed Off' : 'Monitoring Feed Active'}
             </p>
             <p>• Ensure your face remains entirely visible.</p>
@@ -295,7 +261,7 @@ export default function QuizForm() {
           </div>
         </aside>
 
-        {/* Core Multi-Choice Workspace layout frame */}
+        {/* Core Multi-Choice Workspace */}
         <section className={styles.questionSection}>
           <div className={styles.questionHeader}>
             <span className={styles.questionCount}>Question {currentIndex + 1} of {questions.length}</span>
@@ -303,7 +269,7 @@ export default function QuizForm() {
 
           <div className={styles.questionCard}>
             <h2 className={styles.questionText}>{currentQuestion?.question_text}</h2>
-            
+
             <div className={styles.optionsStack}>
               {availableOptions.map((option) => {
                 const isSelected = selectedAnswers[currentIndex] === option.key;
@@ -323,7 +289,7 @@ export default function QuizForm() {
             </div>
           </div>
 
-          {/* Navigational Controls Footing segment */}
+          {/* Navigational Controls */}
           <div className={styles.formActions}>
             <button
               type="button"
@@ -336,10 +302,8 @@ export default function QuizForm() {
 
             {isLastQuestion ? (
               <button
-                type="submit" 
+                type="submit"
                 className={styles.finishBtn}
-                
-                disabled={selectedAnswers[currentIndex] === undefined || isSubmitting || quizResult !== null}
               >
                 {isSubmitting ? "Processing..." : "Submit Answers"}
               </button>
@@ -348,7 +312,7 @@ export default function QuizForm() {
                 type="button"
                 className={styles.nextBtn}
                 onClick={() => setCurrentIndex(prev => prev + 1)}
-                disabled={selectedAnswers[currentIndex] === undefined || quizResult !== null}
+                
               >
                 Next Question →
               </button>
@@ -357,7 +321,7 @@ export default function QuizForm() {
         </section>
       </div>
 
-      {/* --- CUSTOM CENTERED CONFIRMATION DIALOG BOX MODAL --- */}
+      {/* --- CONFIRMATION MODAL --- */}
       {showConfirmModal && (
         <div style={modalStyles.overlay}>
           <div style={modalStyles.dialogBox}>
@@ -367,16 +331,16 @@ export default function QuizForm() {
               Are you sure you want to submit your answers? You cannot review or change them after submission.
             </p>
             <div style={modalStyles.actionRow}>
-              <button 
-                type="button" 
-                style={modalStyles.cancelBtn} 
+              <button
+                type="button"
+                style={modalStyles.cancelBtn}
                 onClick={() => setShowConfirmModal(false)}
               >
                 Cancel
               </button>
-              <button 
-                type="button" 
-                style={modalStyles.confirmBtn} 
+              <button
+                type="button"
+                style={modalStyles.confirmBtn}
                 onClick={() => executeDatabaseWrite(false)}
               >
                 Confirm Submit
@@ -386,28 +350,27 @@ export default function QuizForm() {
         </div>
       )}
 
-      {/* --- CUSTOM CENTERED PERFORMANCE RESULTS DIALOG BOX MODAL --- */}
+      {/* --- RESULTS MODAL --- */}
       {quizResult && (
         <div style={modalStyles.overlay}>
-          <div style={{ 
-            ...modalStyles.dialogBox, 
-            borderTop: quizResult.wasAutomated ? '6px solid #EF4444' : '6px solid #10B981' 
+          <div style={{
+            ...modalStyles.dialogBox,
+            borderTop: quizResult.wasAutomated ? '6px solid #EF4444' : '6px solid #10B981'
           }}>
             <div style={{ ...modalStyles.icon, color: quizResult.wasAutomated ? '#EF4444' : '#10B981' }}>
               {quizResult.wasAutomated ? '⏰' : '🎉'}
             </div>
-            
+
             <h3 style={modalStyles.title}>
               {quizResult.wasAutomated ? "Time's Up! Quiz Auto-Submitted" : "Assessment Completed!"}
             </h3>
-            
+
             <p style={modalStyles.text}>
-              {quizResult.wasAutomated 
+              {quizResult.wasAutomated
                 ? "The evaluation period expired. Your captured progress has been securely locked and saved."
                 : "You have successfully completed your evaluation test."}
             </p>
-            
-            {/* Score Breakdown Area */}
+
             <div style={resultScoreCardStyle}>
               <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6B7280', fontWeight: '600', textTransform: 'uppercase' }}>Final Evaluation Score</p>
               <h2 style={{ margin: 0, fontSize: '36px', color: '#1A2B5F', fontWeight: '800' }}>{quizResult.percentage}%</h2>
@@ -417,9 +380,9 @@ export default function QuizForm() {
             </div>
 
             <div style={modalStyles.actionRow}>
-              <button 
-                type="button" 
-                style={{ ...modalStyles.confirmBtn, width: '100%' }} 
+              <button
+                type="button"
+                style={{ ...modalStyles.confirmBtn, width: '100%' }}
                 onClick={handleExitQuiz}
               >
                 Go to Results
@@ -432,9 +395,7 @@ export default function QuizForm() {
   );
 }
 
-// Global style mappings retain perfect styling standards
-
-
+// Global modal positioning system mappings
 const modalStyles = {
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' },
   dialogBox: { backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', maxWidth: '440px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', animation: 'fadeIn 0.2s ease-out' },

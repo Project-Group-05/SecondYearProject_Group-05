@@ -1,71 +1,56 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '../../utils/supabase/client'; // Adjust this relative path if necessary
 import styles from './progressoverview.module.css';
 
+const BACKEND_URL = "http://127.0.0.1:8000";
+
 export default function ProgressOverview() {
-  const supabase = createClient();
+  
   const [combinedProgress, setCombinedProgress] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchProgressData() {
-      setIsLoading(true);
-      // Add this line temporarily inside your fetchProgressData function right below: const { data: { user } } = ...
-
-      try {
-        // 1. Fetch current logged-in authenticated user session metadata
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error("User session token unverified.");
-
-        // 2. Fetch all available subtopics across s-block groups to prevent missing items
-        const { data: subtopicsData, error: subtopicsError } = await supabase
-          .from('subtopics')
-          .select('id, group_name, title, order_index')
-          .order('order_index', { ascending: true });
-
-        if (subtopicsError) throw subtopicsError;
-
-        // 3. Fetch the logged-in student's personal row logs inside student_progress
-        const { data: progressRecords, error: progressError } = await supabase
-          .from('student_progress')
-          .select('subtopic_id, current_level, last_quiz_score, total_sessions')
-          .eq('student_id', user.id);
-
-        if (progressError) throw progressError;
-
-        // 4. Group row records into an map lookup object by subtopic_id
-        const progressMap = {};
-        progressRecords?.forEach(record => {
-          progressMap[record.subtopic_id] = record;
-        });
-
-        // 5. Build combined data nodes fallback mapping structure
-        const compiledData = subtopicsData.map(topic => {
-          const userProgress = progressMap[topic.id];
-
-          return {
-            id: topic.id,
-            name: topic.title,
-            // Extracts string values: 'Group 1' or 'Group 2' -> maps to pure numbers 1 or 2
-            groupNum: topic.group_name?.includes('2') ? 2 : 1, 
-            level: userProgress?.current_level || 'Beginner', // Empty fallback defaults
-            score: userProgress?.last_quiz_score !== undefined ? userProgress.last_quiz_score : 0, // 0% if empty
-            sessions: userProgress?.total_sessions || 0 // 0 sessions if empty
-          };
-        });
-
-        setCombinedProgress(compiledData);
-      } catch (err) {
-        console.error("Database tracking sync failed:", err.message);
-      } finally {
+  async function fetchProgressData() {
+    setIsLoading(true);
+    try {
+      const raw = localStorage.getItem("student");
+      if (!raw) {
+        console.error("No student session found.");
         setIsLoading(false);
+        return;
       }
-    }
+      const student = JSON.parse(raw);
+      if (!student?.id) {
+        setIsLoading(false);
+        return;
+      }
 
-    fetchProgressData();
-  }, []);
+      const response = await fetch(`${BACKEND_URL}/progress/${student.id}`);
+      const result = await response.json();
+
+      if (!result.success) throw new Error(result.message);
+
+      const compiledData = result.data.progress.map(item => ({
+        id: item.subtopic_id,
+        name: item.subtopics?.title,
+        groupNum: item.subtopics?.group_name?.includes('2') ? 2 : 1,
+        level: item.current_level || 'Beginner',
+        score: item.last_quiz_score ?? 0,
+        sessions: item.total_sessions || 0
+      }));
+
+      setCombinedProgress(compiledData);
+    } catch (err) {
+      console.error("Progress fetch failed:", err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  fetchProgressData();
+}, []);
+
 
   const getLevelColorClass = (level) => {
     if (level === 'Intermediate') return styles.fillIntermediate;
