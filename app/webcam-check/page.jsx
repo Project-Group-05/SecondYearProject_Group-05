@@ -68,7 +68,7 @@ function WebcamCheckContent() {
   return (
     <div className={styles.container}>
       <div className={styles.card} style={{ maxWidth: '500px', width: '100%' }}>
-        <h1 className={styles.title}>Identity & Environment Check</h1>
+        <h1 className={styles.title}>Webcam Activation Required</h1>
         <p className={styles.description}>
           Please enable your camera feed to begin your study session.
         </p>
@@ -104,7 +104,7 @@ function WebcamCheckContent() {
         <div style={{ width: '100%', marginTop: '4px' }}>
           {status !== 'success' ? (
             <LocalButton 
-              label={status === 'loading' ? "Connecting..." : "Enable Camera"} 
+              label={status === 'loading' ? "Connecting..." : "Authorize & Launch Camera"} 
               onClick={requestCamera} 
               disabled={status === 'loading'}
             />
