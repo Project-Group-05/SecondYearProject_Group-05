@@ -31,6 +31,9 @@ function DiagnosticContent() {
         const token = localStorage.getItem("access_token");
         const studentId = localStorage.getItem("student_id");
 
+        console.log("STUDENT ID:", studentId);   // ← add
+    console.log("TOKEN:", token);
+
         if (!token || !studentId) {
           router.push('/login');
           return;

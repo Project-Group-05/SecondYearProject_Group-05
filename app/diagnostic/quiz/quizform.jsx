@@ -124,46 +124,52 @@ export default function QuizForm() {
     setIsSubmitting(true);
 
     try {
-      // Still using Supabase auth client-side ONLY to retrieve user identity for the payload
-       const stored = localStorage.getItem('student');
-    if (!stored) throw new Error("No active authenticated session discovered.");
-    const user = JSON.parse(stored);
+      const stored = localStorage.getItem('student');
+      if (!stored) throw new Error("No active authenticated session discovered.");
+      const user = JSON.parse(stored);
 
-    const formattedAnswers = questions.map((question, idx) => ({
-      question_id: question.id,
-      student_answer: selectedAnswers[idx] || ""
+      const formattedAnswers = questions.map((question, idx) => ({
+        question_id: question.id,
+        student_answer: selectedAnswers[idx] || ""
       }));
 
-      // Matches your DiagnosticSubmit Pydantic model: student_id, student_email, answers
+      const studentId = localStorage.getItem('student_id') || user.id;
       const payload = {
-        student_id: user.id,
+        student_id: studentId,
         student_email: user.email,
         answers: formattedAnswers
       };
 
       const backendResponse = await fetch('http://localhost:8000/diagnostic/submit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       const resultData = await backendResponse.json();
 
       if (!backendResponse.ok || !resultData.success) {
-        throw new Error(resultData.message || "Failed processing submission payload through FastAPI.");
+        throw new Error(resultData.message || "Failed processing submission payload.");
       }
 
-      // Drills into: { success, data: { results: { total_questions, correct_answers, score_percentage } } }
       const reportSummary = resultData.data.results;
 
-      // Stop local webcam stream
+      // ── ✅ FIX 1: Mark diagnostic complete in DB ──────────────────
+      await fetch('http://localhost:8000/diagnostic/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id: studentId })
+      });
+
+      // ── ✅ FIX 2: Update localStorage so next navigation is correct ─
+      const updatedStudent = { ...user, diagnostic_completed: true };
+      localStorage.setItem('student', JSON.stringify(updatedStudent));
+      // ─────────────────────────────────────────────────────────────
+
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
 
-      // Map backend score fields to UI result state
       setQuizResult({
         correct: reportSummary.correct_answers,
         total: reportSummary.total_questions,
