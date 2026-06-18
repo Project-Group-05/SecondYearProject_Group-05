@@ -11,7 +11,7 @@ export default function DiagnosticPage() {
     <div className={styles.container}>
       {/* This part is the Header */}
       <div className={styles.header}>
-        <h1 className={styles.title}>Chemistry Diagnostic Test</h1>
+        <h1 className={styles.title}>Evaluation Test</h1>
         <p className={styles.subtitle}>Evaluation: Group 1 & Group 2 Elements</p>
       </div>
       
@@ -21,13 +21,13 @@ export default function DiagnosticPage() {
         <h2 style={{ color: '#1A2B5F', marginBottom: '15px' }}>Instructions</h2>
         
         <p>
-          This diagnostic will assess your current level across 10 key subtopics. 
-          Your webcam must remain active for eye-tracking analysis throughout the session.
+          This  will assess your current level across 10 key subtopics. 
+          Your webcam must remain active throughout the session.
         </p>
         
         <button 
           className={styles.mainButton} 
-          onClick={() => router.push('/quiz')}
+          onClick={() => router.push('/diagnostic/quiz')}
         >
           Start Assessment
         </button>

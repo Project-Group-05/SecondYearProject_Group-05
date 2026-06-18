@@ -1,61 +1,107 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '../../utils/supabase/client'; // Adjust this relative path if your utils folder moves
 import styles from './quiz.module.css';
 
-export default function QuizForm({ subtopicId }) {
+export default function QuizForm() {
   const router = useRouter();
-  const supabase = createClient();
 
-  // State Hooks
+  // Hardware Verification States
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState('idle');
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  // Core Quiz States
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({}); // e.g., { 0: 'C', 1: 'A' }
-  const [timeLeft, setTimeLeft] = useState(1200); // 20 minutes countdown
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [timeLeft, setTimeLeft] = useState(4500);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Fetch live quiz questions from your Supabase table
+  // Controls the custom centered confirmation dialog box
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Controls the custom post-submit results dialog box
+  const [quizResult, setQuizResult] = useState(null);
+
+  // 1. Fetch questions from FastAPI backend on mount
   useEffect(() => {
     async function fetchQuestions() {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('main_exam_questions')
-        .select('*')
-        .gte('id', 1)
-        .lte('id', 40)
-        .order('id', { ascending: true });
+      try {
+        const response = await fetch('http://localhost:8000/diagnostic/questions');
+        const resData = await response.json();
 
-      if (!error && data) {
-        setQuestions(data);
-      } else {
-        console.error("Error fetching question records:", error?.message);
+        // Unwraps from your success_response utility wrapper: { success, data: { questions } }
+        if (resData.success && resData.data?.questions) {
+          setQuestions(resData.data.questions);
+        } else {
+          console.error("Error fetching question records:", resData.message);
+        }
+      } catch (err) {
+        console.error("Network failure gathering diagnostic records from FastAPI:", err);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     fetchQuestions();
+
+    // Cleanup camera streams if the user leaves the page abruptly
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
   }, []);
 
   // 2. Countdown Timer Loop
   useEffect(() => {
-    if (isLoading || !questions.length) return;
+    if (isLoading || !questions.length || !isCameraActive || quizResult) return;
+
     if (timeLeft <= 0) {
       autoSubmitQuiz();
       return;
     }
+
     const timer = setInterval(() => {
       setTimeLeft(prev => prev - 1);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, isLoading, questions.length]);
+  }, [timeLeft, isLoading, questions.length, isCameraActive, quizResult]);
+
+  // 3. Hardware Authorization Call
+  const startCameraHardware = async () => {
+    setCameraStatus('loading');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: "user" }
+      });
+
+      streamRef.current = stream;
+      setCameraStatus('success');
+      setIsCameraActive(true);
+
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 50);
+
+    } catch (err) {
+      console.error("Webcam allocation failure:", err);
+      setCameraStatus('error');
+    }
+  };
 
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    return `${hrs}:${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   const handleOptionSelect = (optionLetter) => {
@@ -63,72 +109,120 @@ export default function QuizForm({ subtopicId }) {
   };
 
   const autoSubmitQuiz = () => {
-    alert("Time has expired! Your quiz is being submitted automatically.");
-    processSubmission();
+    setShowConfirmModal(false);
+    executeDatabaseWrite(true);
   };
 
-  // 3. Process Submission & Save straight to your exact database schema layout
-  const processSubmission = async () => {
+  const openConfirmationModal = (e) => {
+    if (e) e.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  // Centralized submission dispatcher hitting FastAPI
+  const executeDatabaseWrite = async (isForcedByTimeout = false) => {
+    setShowConfirmModal(false);
     setIsSubmitting(true);
-    
-    let correctCount = 0;
-    const totalQuestionsCount = questions.length;
-
-    // Evaluate how many selections exactly matched correct_option string flags
-    questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correct_option) {
-        correctCount++;
-      }
-    });
-
-    // Calculate score percentage mapping safely
-    const finalPercentage = totalQuestionsCount > 0 
-      ? Math.round((correctCount / totalQuestionsCount) * 100) 
-      : 0;
 
     try {
-      // Fetch current logged in student profile details safely
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const stored = localStorage.getItem('student');
+      if (!stored) throw new Error("No active authenticated session discovered.");
+      const user = JSON.parse(stored);
 
-      if (userError || !user) {
-        throw new Error("No active authenticated student session discovered.");
+      const formattedAnswers = questions.map((question, idx) => ({
+        question_id: question.id,
+        student_answer: selectedAnswers[idx] || ""
+      }));
+
+      const studentId = localStorage.getItem('student_id') || user.id;
+      const payload = {
+        student_id: studentId,
+        student_email: user.email,
+        answers: formattedAnswers
+      };
+
+      const backendResponse = await fetch('http://localhost:8000/diagnostic/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const resultData = await backendResponse.json();
+
+      if (!backendResponse.ok || !resultData.success) {
+        throw new Error(resultData.message || "Failed processing submission payload.");
       }
 
-      // 🟢 Write straight to your custom data parameters grid layout setup
-      const { error: insertError } = await supabase
-        .from('main_exam_attempts')
-        .insert([
-          {
-            student_id: user.id,                  // Secure profile UUID key tracking
-            student_email: user.email,            // Maps to student_email
-            total_questions: totalQuestionsCount, // Maps to total_questions
-            correct_answers: correctCount,        // Maps to correct_answers
-            score_percentage: finalPercentage,   // Maps to score_percentage
-            submitted_at: new Date().toISOString() // Maps to submitted_at
-          }
-        ]);
+      const reportSummary = resultData.data.results;
 
-      if (insertError) throw insertError;
+      // ── ✅ FIX 1: Mark diagnostic complete in DB ──────────────────
+      await fetch('http://localhost:8000/diagnostic/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id: studentId })
+      });
 
-      alert(`Quiz submitted successfully! Performance: ${finalPercentage}%`);
+      // ── ✅ FIX 2: Update localStorage so next navigation is correct ─
+      const updatedStudent = { ...user, diagnostic_completed: true };
+      localStorage.setItem('student', JSON.stringify(updatedStudent));
+      // ─────────────────────────────────────────────────────────────
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      setQuizResult({
+        correct: reportSummary.correct_answers,
+        total: reportSummary.total_questions,
+        percentage: reportSummary.score_percentage,
+        wasAutomated: isForcedByTimeout
+      });
+
     } catch (err) {
-      console.error("Database submission storage crash:", err.message);
-      alert(`Could not record your metrics: ${err.message}`);
+      console.error("Submission crash:", err.message);
+      console.error(`Could not record your metrics: ${err.message}`);
+      router.push('/dashboard');
     } finally {
       setIsSubmitting(false);
-      router.push('/diagnostic/results');
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (confirm("Are you sure you want to finalize and push your answers?")) {
-      processSubmission();
-    }
+  const handleExitQuiz = () => {
+    router.push('/diagnostic/results');
   };
 
   if (isLoading) return <div className={styles.loadingPlaceholder}>Assembling quiz framework...</div>;
   if (!questions.length) return <div className={styles.loadingPlaceholder}>No quiz questions found in database.</div>;
+
+  // --- GATEWAY LOOK: Proctor Verification Required ---
+  if (!isCameraActive) {
+    return (
+      <div className={styles.gateCard}>
+        <div className={styles.gateIcon}>🔒</div>
+        <h2 className={styles.gateTitle}>Webcam Activation Required</h2>
+        <p className={styles.gateText}>
+          This exam requires an active webcam feed.
+          Please enable your device camera!
+        </p>
+
+        <div style={{ margin: '12px 0', minHeight: '24px', fontSize: '14px' }}>
+          {cameraStatus === 'loading' && <p style={{ color: '#1A56DB' }}>Initializing video framework...</p>}
+          {cameraStatus === 'error' && <p style={{ color: '#EF4444', fontWeight: 'bold' }}>⚠ Camera access denied. Please check your system permission flags.</p>}
+        </div>
+
+        <button
+          type="button"
+          onClick={startCameraHardware}
+          disabled={cameraStatus === 'loading'}
+          className={styles.gateBtn}
+          style={{
+            backgroundColor: cameraStatus === 'loading' ? '#9CA3AF' : '#1A2B5F'
+          }}
+        >
+          {cameraStatus === 'loading' ? 'Connecting...' : 'Authorize & Launch Camera'}
+        </button>
+      </div>
+    );
+  }
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -138,37 +232,42 @@ export default function QuizForm({ subtopicId }) {
     { key: 'B', text: currentQuestion.option_b },
     { key: 'C', text: currentQuestion.option_c },
     { key: 'D', text: currentQuestion.option_d },
-  ];
-
-  if (currentQuestion.option_e) {
-    availableOptions.push({ key: 'E', text: currentQuestion.option_e });
-  }
+    { key: 'E', text: currentQuestion.option_e }
+  ].filter(opt => opt.text);
 
   return (
-    <form onSubmit={handleSubmit} className={styles.quizFormLayout}>
+    <form onSubmit={openConfirmationModal} className={styles.quizFormLayout}>
       {/* Timer Element */}
       <div className={`${styles.timerRow} ${timeLeft < 60 ? styles.timerUrgent : ''}`}>
         <span className={styles.timerIcon}>⏱</span>
-        <span className={styles.timeDigits}>Time Remaining: {formatTime(timeLeft)}</span>
+        <span className={styles.timeDigits}>
+          {timeLeft <= 0 ? "Time's Up!" : `Time Remaining: ${formatTime(timeLeft)}`}
+        </span>
       </div>
 
       <div className={styles.splitContentGrid}>
-        {/* Proctoring Side Bar panel */}
+        {/* Proctoring Side Bar Panel */}
         <aside className={styles.webcamPanel}>
           <div className={styles.webcamBox}>
-            <div className={styles.cameraPlaceholder}>
-              <span className={styles.cameraDot}>●</span>
-              <p className={styles.cameraText}>Webcam Monitoring Active</p>
-              <small className={styles.subText}>AI tracks focus indicators</small>
-            </div>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           <div className={styles.proctoringRules}>
+            <p style={{ color: quizResult ? '#6B7280' : '#059669', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ inlineSize: '8px', blockSize: '8px', backgroundColor: quizResult ? '#9CA3AF' : '#10B981', borderRadius: '50%' }}></span>
+              {quizResult ? 'Monitoring Feed Off' : 'Monitoring Feed Active'}
+            </p>
             <p>• Ensure your face remains entirely visible.</p>
-            <p>• Avoid using phones or looking away.</p>
+            <p>• Avoid looking away or swapping browser tabs.</p>
           </div>
         </aside>
 
-        {/* Core Multi-Choice Workspace layout frame */}
+        {/* Core Multi-Choice Workspace */}
         <section className={styles.questionSection}>
           <div className={styles.questionHeader}>
             <span className={styles.questionCount}>Question {currentIndex + 1} of {questions.length}</span>
@@ -176,7 +275,7 @@ export default function QuizForm({ subtopicId }) {
 
           <div className={styles.questionCard}>
             <h2 className={styles.questionText}>{currentQuestion?.question_text}</h2>
-            
+
             <div className={styles.optionsStack}>
               {availableOptions.map((option) => {
                 const isSelected = selectedAnswers[currentIndex] === option.key;
@@ -186,6 +285,7 @@ export default function QuizForm({ subtopicId }) {
                     type="button"
                     className={`${styles.optionRow} ${isSelected ? styles.optionActive : ''}`}
                     onClick={() => handleOptionSelect(option.key)}
+                    disabled={isSubmitting || quizResult !== null}
                   >
                     <span className={styles.optionIndex}>{option.key}</span>
                     <span className={styles.optionLabel}>{option.text}</span>
@@ -195,13 +295,13 @@ export default function QuizForm({ subtopicId }) {
             </div>
           </div>
 
-          {/* Navigational Controls Footing segment */}
+          {/* Navigational Controls */}
           <div className={styles.formActions}>
             <button
               type="button"
               className={styles.prevBtn}
               onClick={() => setCurrentIndex(prev => prev - 1)}
-              disabled={currentIndex === 0}
+              disabled={currentIndex === 0 || quizResult !== null}
             >
               ← Previous
             </button>
@@ -210,7 +310,6 @@ export default function QuizForm({ subtopicId }) {
               <button
                 type="submit"
                 className={styles.finishBtn}
-                disabled={selectedAnswers[currentIndex] === undefined || isSubmitting}
               >
                 {isSubmitting ? "Processing..." : "Submit Answers"}
               </button>
@@ -219,7 +318,7 @@ export default function QuizForm({ subtopicId }) {
                 type="button"
                 className={styles.nextBtn}
                 onClick={() => setCurrentIndex(prev => prev + 1)}
-                disabled={selectedAnswers[currentIndex] === undefined}
+                
               >
                 Next Question →
               </button>
@@ -227,6 +326,91 @@ export default function QuizForm({ subtopicId }) {
           </div>
         </section>
       </div>
+
+      {/* --- CONFIRMATION MODAL --- */}
+      {showConfirmModal && (
+        <div style={modalStyles.overlay}>
+          <div style={modalStyles.dialogBox}>
+            <div style={modalStyles.icon}>❓</div>
+            <h3 style={modalStyles.title}>Submit Assessment?</h3>
+            <p style={modalStyles.text}>
+              Are you sure you want to submit your answers? You cannot review or change them after submission.
+            </p>
+            <div style={modalStyles.actionRow}>
+              <button
+                type="button"
+                style={modalStyles.cancelBtn}
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                style={modalStyles.confirmBtn}
+                onClick={() => executeDatabaseWrite(false)}
+              >
+                Confirm Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- RESULTS MODAL --- */}
+      {quizResult && (
+        <div style={modalStyles.overlay}>
+          <div style={{
+            ...modalStyles.dialogBox,
+            borderTop: quizResult.wasAutomated ? '6px solid #EF4444' : '6px solid #10B981'
+          }}>
+            <div style={{ ...modalStyles.icon, color: quizResult.wasAutomated ? '#EF4444' : '#10B981' }}>
+              {quizResult.wasAutomated ? '⏰' : '🎉'}
+            </div>
+
+            <h3 style={modalStyles.title}>
+              {quizResult.wasAutomated ? "Time's Up! Quiz Auto-Submitted" : "Assessment Completed!"}
+            </h3>
+
+            <p style={modalStyles.text}>
+              {quizResult.wasAutomated
+                ? "The evaluation period expired. Your captured progress has been securely locked and saved."
+                : "You have successfully completed your evaluation test."}
+            </p>
+
+            <div style={resultScoreCardStyle}>
+              <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6B7280', fontWeight: '600', textTransform: 'uppercase' }}>Final Evaluation Score</p>
+              <h2 style={{ margin: 0, fontSize: '36px', color: '#1A2B5F', fontWeight: '800' }}>{quizResult.percentage}%</h2>
+              <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#4B5563', fontWeight: '500' }}>
+                Answered <strong style={{ color: quizResult.wasAutomated ? '#EF4444' : '#10B981' }}>{quizResult.correct}</strong> out of <strong>{quizResult.total}</strong> correct
+              </p>
+            </div>
+
+            <div style={modalStyles.actionRow}>
+              <button
+                type="button"
+                style={{ ...modalStyles.confirmBtn, width: '100%' }}
+                onClick={handleExitQuiz}
+              >
+                Go to Results
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
+
+// Global modal positioning system mappings
+const modalStyles = {
+  overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' },
+  dialogBox: { backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', maxWidth: '440px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', animation: 'fadeIn 0.2s ease-out' },
+  icon: { fontSize: '36px', marginBottom: '12px' },
+  title: { fontSize: '20px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' },
+  text: { fontSize: '14px', color: '#4B5563', lineHeight: '1.5', margin: '0 0 24px 0' },
+  actionRow: { display: 'flex', gap: '12px', justifyContent: 'center' },
+  cancelBtn: { backgroundColor: '#F3F4F6', border: '1px solid #D1D5DB', color: '#374151', padding: '10px 20px', borderRadius: '6px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', flex: 1 },
+  confirmBtn: { backgroundColor: '#1A2B5F', border: 'none', color: '#FFFFFF', padding: '10px 20px', borderRadius: '6px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', flex: 1 }
+};
+
+const resultScoreCardStyle = { backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '20px', marginBottom: '24px', textAlign: 'center' };

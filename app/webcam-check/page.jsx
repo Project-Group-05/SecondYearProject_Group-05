@@ -55,23 +55,22 @@ function WebcamCheckContent() {
   };
 
   // Navigates directly into the chemistry diagnostic quiz page layout
-  const handleStartQuiz = () => {
+  const handleStartStudy = () => {
     // Shuts down hardware recording indicators before shifting page paths
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
     }
     
     // Forwards your unique task sequence integer to the evaluation panel
-    router.push(`/quiz?subtopicId=${taskId || '1'}`);
+    router.push('/study');
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.card} style={{ maxWidth: '500px', width: '100%' }}>
-        <div className={styles.iconCircle}>📷</div>
-        <h1 className={styles.title}>Identity & Environment Check</h1>
+        <h1 className={styles.title}>Webcam Activation Required</h1>
         <p className={styles.description}>
-          Please enable your camera feed to begin your chemistry diagnostic test for Task #{taskId || "None Selected"}.
+          Please enable your camera feed to begin your study session.
         </p>
 
         {/* --- Live Video Feed Frame Container --- */}
@@ -105,14 +104,14 @@ function WebcamCheckContent() {
         <div style={{ width: '100%', marginTop: '4px' }}>
           {status !== 'success' ? (
             <LocalButton 
-              label={status === 'loading' ? "Connecting..." : "Enable Camera"} 
+              label={status === 'loading' ? "Connecting..." : "Authorize & Launch Camera"} 
               onClick={requestCamera} 
               disabled={status === 'loading'}
             />
           ) : (
             <LocalButton 
-              label="Start Diagnostic Test →" 
-              onClick={handleStartQuiz} 
+              label="Start Study Session →" 
+              onClick={handleStartStudy} 
             />
           )}
         </div>

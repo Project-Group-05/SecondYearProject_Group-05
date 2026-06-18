@@ -18,6 +18,7 @@ export default function DashboardPage() {
   };
 
   return (
+
     <div style={styles.dashboardContainer}>
       
       
@@ -44,9 +45,15 @@ export default function DashboardPage() {
           </div>
           <ProgressOverview />
         </section>
+        
       </main>
+      
     </div>
+  
   );
+  console.log("student key:", localStorage.getItem("student"));
+  console.log("user key:", localStorage.getItem("user"));
+  console.log("student_id key:", localStorage.getItem("student_id"));
 }
 
 const styles = {

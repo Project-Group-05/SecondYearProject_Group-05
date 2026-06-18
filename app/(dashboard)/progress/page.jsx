@@ -1,496 +1,162 @@
 "use client";
 
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
-import styles from './progress.module.css';
-
-export default function ProgressPage() {
-  // State for user progress data
-  const [userData, setUserData] = useState(null);
-
-  useEffect(() => {
-    /* BACKEND CONNECTION POINT:
-       Replace this mockData with a fetch request to your API.
-       Example: 
-       fetch('/api/user/progress').then(res => res.json()).then(data => setUserData(data))
-    */
-    const mockData = {
-      name: "Student",
-      overallProgress: 65,
-      completedTopics: 4,
-      totalTopics: 10,
-      recentActivity: [
-        { topic: "Atomic Radius", score: 85, date: "2026-04-05" },
-        { topic: "Ionization Energy", score: 62, date: "2026-04-06" },
-        { topic: "Oxides", score: 45, date: "2026-04-07" }
-      ]
-    };
-    setUserData(mockData);
-  }, []);
-
-  if (!userData) return <div className={styles.loading}>Loading Progress...</div>;
-
-  return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Learning Progress</h1>
-        <p className={styles.subtitle}>Track your mastery of s-block elements</p>
-      </header>
-
-      {/* Stats Overview */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Overall Mastery</span>
-          <div className={styles.progressCircle}>
-            <span className={styles.percentage}>{userData.overallProgress}%</span>
-          </div>
-        </div>
-
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Topics Completed</span>
-          <h2 className={styles.statValue}>{userData.completedTopics} / {userData.totalTopics}</h2>
-          <div className={styles.progressBarBase}>
-            <div 
-              className={styles.progressBarFill} 
-              style={{ width: `${(userData.completedTopics / userData.totalTopics) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity Table */}
-      <div className={styles.activitySection}>
-        <h3 className={styles.sectionTitle}>Recent Diagnostic Performance</h3>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Topic</th>
-              <th>Score</th>
-              <th>Date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {userData.recentActivity.map((item, index) => (
-              <tr key={index}>
-                <td className={styles.topicName}>{item.topic}</td>
-                <td>{item.score}%</td>
-                <td>{item.date}</td>
-                <td>
-                  <span className={item.score >= 75 ? styles.statusHigh : styles.statusLow}>
-                    {item.score >= 75 ? 'Mastered' : 'Needs Review'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-=======
-/**
- * PROGRESS PAGE
- * Save at: /app/(dashboard)/progress/page.jsx
- *
- * This is a CLIENT COMPONENT because it uses:
- *  - useState / useEffect for data fetching and UI state
- *  - localStorage to read student info
- *  - expandable row interactions
- *
- * The (dashboard) route group applies the dashboard layout (Navbar).
- * See /app/(dashboard)/layout.jsx — Navbar is rendered there.
- */
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./progress.module.css";
 
-// ─────────────────────────────────────────────
-// CONSTANTS — the 10 chemistry subtopics
-// ─────────────────────────────────────────────
-const GROUP_1_SUBTOPICS = [
-  { id: "g1-trends",      name: "Group Trends of Group 1 Elements",    group: "Group 1" },
-  { id: "g1-reactions",   name: "Reaction of Group 1 Elements",         group: "Group 1" },
-  { id: "g1-thermal",     name: "Thermal Stability of Group 1 Salts",   group: "Group 1" },
-  { id: "g1-solubility",  name: "Solubility of Group 1 Salts",          group: "Group 1" },
-  { id: "g1-flame",       name: "Flame Test of Group 1 Elements",       group: "Group 1" },
-];
+const BACKEND_URL = "http://127.0.0.1:8000";
 
-const GROUP_2_SUBTOPICS = [
-  { id: "g2-trends",      name: "Group Trends of Group 2 Elements",    group: "Group 2" },
-  { id: "g2-reactions",   name: "Reaction of Group 2 Elements",         group: "Group 2" },
-  { id: "g2-thermal",     name: "Thermal Stability of Group 2 Salts",   group: "Group 2" },
-  { id: "g2-solubility",  name: "Solubility of Group 2 Salts",          group: "Group 2" },
-  { id: "g2-flame",       name: "Flame Test of Group 2 Elements",       group: "Group 2" },
-];
-
-// ─────────────────────────────────────────────
-// HELPER UTILITIES
-// ─────────────────────────────────────────────
-
-/**
- * Returns "beginner" | "intermediate" | "advanced" from a score (0–100).
- */
-function levelFromScore(score) {
-  if (score <= 40) return "beginner";
-  if (score <= 70) return "intermediate";
-  return "advanced";
-}
-
-/**
- * Returns a human-readable label for a level key.
- */
-function levelLabel(level) {
-  const map = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced" };
-  return map[level] ?? level;
-}
-
-/**
- * Colour class for a score number cell.
- */
-function scoreColorClass(score) {
-  if (score < 40) return styles.scoreRed;
-  if (score < 70) return styles.scoreYellow;
-  return styles.scoreGreen;
-}
-
-/**
- * Change indicator arrow based on level comparison.
- */
-function ChangeIndicator({ before, after }) {
-  const levels = ["beginner", "intermediate", "advanced"];
-  const diff = levels.indexOf(after) - levels.indexOf(before);
-  if (diff > 0)  return <span className={`${styles.changeCell} ${styles.changeUp}`}>⬆</span>;
-  if (diff < 0)  return <span className={`${styles.changeCell} ${styles.changeDown}`}>⬇</span>;
-  return <span className={`${styles.changeCell} ${styles.changeSame}`}>—</span>;
-}
-
-// ─────────────────────────────────────────────
-// BADGE COMPONENT
-// ─────────────────────────────────────────────
-function Badge({ type, children }) {
-  return <span className={`${styles.badge} ${styles[type]}`}>{children}</span>;
-}
-
-// ─────────────────────────────────────────────
-// SKELETON ROW (loading placeholder)
-// ─────────────────────────────────────────────
-function SkeletonRow() {
-  return (
-    <div className={styles.skeletonRow}>
-      <div style={{ flex: 1 }}>
-        <div className={styles.skeletonBlock} style={{ height: 14, width: "55%", marginBottom: 8 }} />
-        <div className={styles.skeletonBlock} style={{ height: 10, width: "30%" }} />
-      </div>
-      <div style={{ flex: 2, display: "flex", alignItems: "center", gap: "0.75rem" }}>
-        <div className={styles.skeletonBlock} style={{ flex: 1, height: 8, borderRadius: 4 }} />
-        <div className={styles.skeletonBlock} style={{ height: 10, width: 50 }} />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 90, alignItems: "flex-end" }}>
-        <div className={styles.skeletonBlock} style={{ height: 10, width: 70 }} />
-        <div className={styles.skeletonBlock} style={{ height: 10, width: 55 }} />
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// SUBTOPIC ROW COMPONENT (expandable)
-// ─────────────────────────────────────────────
-function SubtopicRow({ subtopicMeta, data }) {
-  const [expanded, setExpanded] = useState(false);
-
-  // If we have no data yet for this subtopic, show defaults
-  const lastScore    = data?.last_score    ?? 0;
-  const sessionCount = data?.session_count ?? 0;
-  const lastStudied  = data?.last_studied  ?? null;
-  const level        = data?.level         ?? levelFromScore(lastScore);
-  const history      = data?.history       ?? [];
-
-  const groupBadgeType = subtopicMeta.group === "Group 1" ? "group1" : "group2";
-
-  return (
-    <div className={styles.subtopicRow}>
-      {/* ── Main clickable row ── */}
-      <div
-        className={styles.rowMain}
-        onClick={() => setExpanded((prev) => !prev)}
-        role="button"
-        aria-expanded={expanded}
-        aria-label={`Toggle session history for ${subtopicMeta.name}`}
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded((p) => !p); }}
-      >
-        {/* Left — name + badges */}
-        <div className={styles.rowLeft}>
-          <p className={styles.rowSubtopicName}>{subtopicMeta.name}</p>
-          <div className={styles.rowBadgeRow}>
-            <Badge type={groupBadgeType}>{subtopicMeta.group}</Badge>
-            <Badge type={level}>{levelLabel(level)}</Badge>
-          </div>
-        </div>
-
-        {/* Centre — progress bar + score */}
-        <div className={styles.rowCenter}>
-          <div className={styles.scoreBar} aria-label={`Score: ${lastScore}%`}>
-            <div
-              className={`${styles.scoreBarFill} ${styles[level]}`}
-              style={{ width: `${lastScore}%` }}
-            />
-          </div>
-          <span className={styles.rowScoreText}>Last: {lastScore}%</span>
-        </div>
-
-        {/* Right — sessions + date */}
-        <div className={styles.rowRight}>
-          <span className={styles.rowSessionsText}>{sessionCount} session{sessionCount !== 1 ? "s" : ""}</span>
-          {lastStudied && (
-            <span className={styles.rowLastStudied}>{lastStudied}</span>
-          )}
-        </div>
-
-        {/* Expand chevron */}
-        <button
-          className={`${styles.expandBtn} ${expanded ? styles.expanded : ""}`}
-          aria-label={expanded ? "Collapse" : "Expand"}
-          tabIndex={-1} /* row itself is focusable */
-        >
-          {/* Inline SVG chevron — no icon library dependency */}
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      </div>
-
-      {/* ── Expanded session history ── */}
-      {expanded && (
-        <div className={styles.historyPanel}>
-          <p className={styles.historyTitle}>Session History</p>
-
-          {history.length === 0 ? (
-            <p className={styles.emptyHistory}>No study sessions yet for this subtopic.</p>
-          ) : (
-            <table className={styles.historyTable}>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Quiz Score</th>
-                  <th>Focus Score</th>
-                  <th>Level Before</th>
-                  <th>Level After</th>
-                  <th style={{ textAlign: "center" }}>Change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((session, idx) => (
-                  <tr key={idx}>
-                    <td>{session.date}</td>
-
-                    <td className={`${styles.scoreCell} ${scoreColorClass(session.quiz_score)}`}>
-                      {session.quiz_score}%
-                    </td>
-
-                    <td className={`${styles.scoreCell} ${session.focus_score !== null ? scoreColorClass(session.focus_score) : ""}`}>
-                      {/* BACKEND: session.focus_score is null when webcam was disabled */}
-                      {session.focus_score !== null ? `${session.focus_score}%` : "—"}
-                    </td>
-
-                    <td>
-                      <Badge type={session.level_before}>{levelLabel(session.level_before)}</Badge>
-                    </td>
-
-                    <td>
-                      <Badge type={session.level_after}>{levelLabel(session.level_after)}</Badge>
-                    </td>
-
-                    <td style={{ textAlign: "center" }}>
-                      <ChangeIndicator before={session.level_before} after={session.level_after} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// MAIN PAGE COMPONENT
-// ─────────────────────────────────────────────
 export default function ProgressPage() {
-  // ── State ──
   const [studentName, setStudentName] = useState("");
-  const [progressData, setProgressData] = useState(null); // keyed by subtopic id
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(null);
+  const [combinedProgress, setCombinedProgress] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ── Read student info from localStorage (client only) ──
   useEffect(() => {
-    // BACKEND: also grab student_id for the API call
-    const name = localStorage.getItem("name") || "Student";
-    // const studentId = localStorage.getItem("student_id");
-    setStudentName(name);
+    const student = JSON.parse(localStorage.getItem("student"));
+    if (student?.name) setStudentName(student.name);
 
-    fetchProgress(/* studentId */);
+    async function fetchProgressData() {
+      setIsLoading(true);
+      try {
+        if (!student?.id) throw new Error("No student session found.");
+
+        // Single call — FastAPI joins student_progress + subtopics together
+        const response = await fetch(`${BACKEND_URL}/progress/${student.id}`);
+        const result = await response.json();
+
+        if (!result.success) throw new Error(result.message);
+
+        // Map backend data to UI shape
+        const compiledData = result.data.progress.map(item => ({
+          id: item.subtopic_id,
+          name: item.subtopics?.title,
+          groupNum: item.subtopics?.group_name?.includes('2') ? 2 : 1,
+          level: item.current_level || 'Beginner',
+          score: item.last_quiz_score ?? 0,
+          sessions: item.total_sessions || 0
+        }));
+
+        setCombinedProgress(compiledData);
+      } catch (err) {
+        console.error("Progress fetch failed:", err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchProgressData();
   }, []);
 
-  // ── Fetch progress data ──
-  async function fetchProgress(/* studentId */) {
-    setLoading(true);
-    setError(null);
+  // ── Helper Style Utilities ──
+  const getLevelColorClass = (level) => {
+    if (level === 'Intermediate') return styles.fillIntermediate;
+    if (level === 'Advanced') return styles.fillAdvanced;
+    return styles.fillBeginner;
+  };
 
-    try {
-      // BACKEND: Replace the mock below with a real API call, e.g.:
-      //   const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/progress/${studentId}`);
-      //   if (!res.ok) throw new Error("Failed to fetch progress");
-      //   const json = await res.json();
-      //   setProgressData(json.subtopics);  // expected shape shown in MOCK_DATA below
+  const getBadgeClass = (level) => {
+    if (level === 'Intermediate') return styles.badgeIntermediate;
+    if (level === 'Advanced') return styles.badgeAdvanced;
+    return styles.badgeBeginner;
+  };
 
-      // ── MOCK DATA — remove when backend is connected ──
-      await new Promise((r) => setTimeout(r, 900)); // simulate network delay
-      setProgressData(MOCK_PROGRESS_DATA);
-    } catch (err) {
-      setError(err.message || "Could not load progress. Try refreshing.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ── Derive summary stats ──
-  const allSubtopics = [...GROUP_1_SUBTOPICS, ...GROUP_2_SUBTOPICS];
-
-  let beginnerCount     = 0;
+  // ── Counter Metrics ──
+  let beginnerCount = 0;
   let intermediateCount = 0;
-  let advancedCount     = 0;
-  let totalSessions     = 0;
+  let advancedCount = 0;
+  let totalSessions = 0;
 
-  if (progressData) {
-    allSubtopics.forEach(({ id }) => {
-      const d = progressData[id];
-      if (!d) return;
-      const lvl = d.level ?? levelFromScore(d.last_score ?? 0);
-      if (lvl === "beginner")     beginnerCount++;
-      else if (lvl === "intermediate") intermediateCount++;
-      else                        advancedCount++;
-      totalSessions += d.session_count ?? 0;
-    });
-  }
+  combinedProgress.forEach((item) => {
+    totalSessions += item.sessions;
+    if (item.level === "Advanced") advancedCount++;
+    else if (item.level === "Intermediate") intermediateCount++;
+    else beginnerCount++;
+  });
 
-  // ─────────────────────────────────────────
-  // RENDER — Loading
-  // ─────────────────────────────────────────
-  if (loading) {
+  const renderGroupSection = (targetGroup, sectionHeading) => {
+    const groupItems = combinedProgress.filter(item => item.groupNum === targetGroup);
+    if (groupItems.length === 0) return null;
+
     return (
-      <div className={styles.pageWrapper}>
-        <div className={styles.container}>
-          <div className={styles.pageHeader}>
-            <div className={`${styles.skeletonBlock}`} style={{ height: 36, width: 200, marginBottom: 8 }} />
-            <div className={`${styles.skeletonBlock}`} style={{ height: 16, width: 280 }} />
-          </div>
+      <div className={styles.groupContainer}>
+        <h2 className={styles.groupHeading}>{sectionHeading}</h2>
 
-          {/* Skeleton stats */}
-          <div className={styles.statsRow}>
-            {[1,2,3,4].map((i) => (
-              <div key={i} className={`${styles.skeletonBlock}`} style={{ height: 80, borderRadius: 10 }} />
-            ))}
-          </div>
+        {groupItems.map((subtopic) => (
+          <div key={subtopic.id} className={styles.row}>
 
-          {/* Skeleton rows */}
-          {["Group 1 Elements", "Group 2 Elements"].map((g) => (
-            <div key={g} className={styles.groupSection}>
-              <div className={`${styles.skeletonBlock}`} style={{ height: 18, width: 160, marginBottom: 16 }} />
-              {[1,2,3,4,5].map((i) => <SkeletonRow key={i} />)}
+            <div className={styles.nameSection}>
+              <span className={styles.subtopicName}>{subtopic.name}</span>
             </div>
-          ))}
-        </div>
+
+            <div className={styles.progressSection}>
+              <div className={styles.progressBarContainer}>
+                <div
+                  className={`${styles.progressBarFill} ${getLevelColorClass(subtopic.level)}`}
+                  style={{ width: `${subtopic.score}%` }}
+                />
+              </div>
+            </div>
+
+            <div className={styles.badgeSection}>
+              <span className={`${styles.badgeBase} ${getBadgeClass(subtopic.level)}`}>
+                {subtopic.level}
+              </span>
+            </div>
+
+            <div className={styles.statsSection}>
+              <span className={styles.statText}>Last: {subtopic.score}%</span>
+              <span className={styles.statText}>Sessions: {subtopic.sessions}</span>
+            </div>
+
+          </div>
+        ))}
       </div>
     );
-  }
+  };
 
-  // ─────────────────────────────────────────
-  // RENDER — Error
-  // ─────────────────────────────────────────
-  if (error) {
+  if (isLoading) {
     return (
       <div className={styles.pageWrapper}>
         <div className={styles.container}>
-          <div className={styles.errorWrapper}>
-            <span className={styles.errorIcon}>⚠️</span>
-            <h2 className={styles.errorTitle}>Failed to load progress</h2>
-            <p className={styles.errorMessage}>{error}</p>
-            <button className={styles.btnPrimary} onClick={() => fetchProgress()}>
-              Try Again
-            </button>
-          </div>
+          <div className={styles.statusLabel}>Syncing structural data frames...</div>
         </div>
       </div>
     );
   }
 
-  // ─────────────────────────────────────────
-  // RENDER — Main
-  // ─────────────────────────────────────────
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.container}>
 
-        {/* ── Page Header ── */}
-        <div className={styles.pageHeader}>
+        <header className={styles.pageHeader}>
           <h1 className={styles.pageTitle}>My Progress</h1>
           <p className={styles.studentSubtitle}>{studentName}&apos;s Learning Journey</p>
-        </div>
+        </header>
 
-        {/* ── Summary Stats Row ── */}
         <div className={styles.statsRow}>
-          {/* BACKEND: These counts are derived from progressData (local mock or real API) */}
-          <div className={`${styles.statBox} ${styles.beginner}`}>
+          <div className={`${styles.statBox} ${styles.beginnerBox}`}>
             <span className={styles.statNumber}>{beginnerCount}</span>
-            <span className={styles.statLabel}>Beginner Subtopics</span>
+            <span className={styles.statLabel}>Beginner Modules</span>
           </div>
-          <div className={`${styles.statBox} ${styles.intermediate}`}>
+          <div className={`${styles.statBox} ${styles.intermediateBox}`}>
             <span className={styles.statNumber}>{intermediateCount}</span>
-            <span className={styles.statLabel}>Intermediate Subtopics</span>
+            <span className={styles.statLabel}>Intermediate Modules</span>
           </div>
-          <div className={`${styles.statBox} ${styles.advanced}`}>
+          <div className={`${styles.statBox} ${styles.advancedBox}`}>
             <span className={styles.statNumber}>{advancedCount}</span>
-            <span className={styles.statLabel}>Advanced Subtopics</span>
+            <span className={styles.statLabel}>Advanced Modules</span>
           </div>
-          <div className={`${styles.statBox} ${styles.sessions}`}>
+          <div className={`${styles.statBox} ${styles.sessionsBox}`}>
             <span className={styles.statNumber}>{totalSessions}</span>
             <span className={styles.statLabel}>Total Sessions</span>
           </div>
         </div>
 
-        {/* ── Group 1 Section ── */}
-        <section className={styles.groupSection} aria-labelledby="group1-heading">
-          <h2 className={styles.groupHeading} id="group1-heading">Group 1 Elements</h2>
-          {GROUP_1_SUBTOPICS.map((sub) => (
-            <SubtopicRow
-              key={sub.id}
-              subtopicMeta={sub}
-              data={progressData?.[sub.id] ?? null}
-            />
-          ))}
-        </section>
+        <div className={styles.overviewWrapper}>
+          {renderGroupSection(1, "Alkali Metals (Group 1) Elements")}
+          {renderGroupSection(2, "Alkaline Earth Metals (Group 2) Elements")}
+        </div>
 
-        {/* ── Group 2 Section ── */}
-        <section className={styles.groupSection} aria-labelledby="group2-heading">
-          <h2 className={styles.groupHeading} id="group2-heading">Group 2 Elements</h2>
-          {GROUP_2_SUBTOPICS.map((sub) => (
-            <SubtopicRow
-              key={sub.id}
-              subtopicMeta={sub}
-              data={progressData?.[sub.id] ?? null}
-            />
-          ))}
-        </section>
-
-        {/* ── Back to Dashboard ── */}
         <div className={styles.bottomActions}>
           <Link href="/dashboard" className={styles.btnPrimary}>
             Back to Dashboard
@@ -501,101 +167,3 @@ export default function ProgressPage() {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// MOCK DATA
-// Remove this block and replace fetchProgress() with a real API call.
-//
-// Expected API response shape from GET /progress/{student_id}:
-// {
-//   subtopics: {
-//     [subtopic_id]: {
-//       level:         "beginner" | "intermediate" | "advanced",
-//       last_score:    number,          // 0–100
-//       session_count: number,
-//       last_studied:  string | null,   // e.g. "May 20"
-//       history: [
-//         {
-//           date:         string,        // e.g. "May 12, 2025"
-//           quiz_score:   number,        // 0–100
-//           focus_score:  number | null, // null if webcam was off
-//           level_before: "beginner" | "intermediate" | "advanced",
-//           level_after:  "beginner" | "intermediate" | "advanced",
-//         },
-//         ...
-//       ]
-//     }
-//   }
-// }
-// ─────────────────────────────────────────────
-const MOCK_PROGRESS_DATA = {
-  "g1-trends": {
-    level: "intermediate", last_score: 62, session_count: 4, last_studied: "May 20",
-    history: [
-      { date: "May 20, 2025", quiz_score: 62, focus_score: 80,   level_before: "beginner",     level_after: "intermediate" },
-      { date: "May 15, 2025", quiz_score: 45, focus_score: 55,   level_before: "beginner",     level_after: "beginner"     },
-      { date: "May 10, 2025", quiz_score: 30, focus_score: null, level_before: "beginner",     level_after: "beginner"     },
-      { date: "May 5, 2025",  quiz_score: 20, focus_score: 40,   level_before: "beginner",     level_after: "beginner"     },
-    ],
-  },
-  "g1-reactions": {
-    level: "beginner", last_score: 35, session_count: 2, last_studied: "May 18",
-    history: [
-      { date: "May 18, 2025", quiz_score: 35, focus_score: 60, level_before: "beginner", level_after: "beginner" },
-      { date: "May 12, 2025", quiz_score: 25, focus_score: 50, level_before: "beginner", level_after: "beginner" },
-    ],
-  },
-  "g1-thermal": {
-    level: "advanced", last_score: 88, session_count: 3, last_studied: "May 21",
-    history: [
-      { date: "May 21, 2025", quiz_score: 88, focus_score: 92, level_before: "intermediate", level_after: "advanced"      },
-      { date: "May 16, 2025", quiz_score: 72, focus_score: 85, level_before: "beginner",     level_after: "intermediate"  },
-      { date: "May 11, 2025", quiz_score: 38, focus_score: 70, level_before: "beginner",     level_after: "beginner"      },
-    ],
-  },
-  "g1-solubility": {
-    level: "intermediate", last_score: 58, session_count: 1, last_studied: "May 19",
-    history: [
-      { date: "May 19, 2025", quiz_score: 58, focus_score: null, level_before: "beginner", level_after: "intermediate" },
-    ],
-  },
-  "g1-flame": {
-    level: "beginner", last_score: 20, session_count: 1, last_studied: "May 17",
-    history: [
-      { date: "May 17, 2025", quiz_score: 20, focus_score: 30, level_before: "beginner", level_after: "beginner" },
-    ],
-  },
-  "g2-trends": {
-    level: "intermediate", last_score: 65, session_count: 3, last_studied: "May 22",
-    history: [
-      { date: "May 22, 2025", quiz_score: 65, focus_score: 78, level_before: "beginner",      level_after: "intermediate" },
-      { date: "May 17, 2025", quiz_score: 42, focus_score: 65, level_before: "beginner",      level_after: "beginner"     },
-      { date: "May 12, 2025", quiz_score: 30, focus_score: 45, level_before: "beginner",      level_after: "beginner"     },
-    ],
-  },
-  "g2-reactions": {
-    level: "advanced", last_score: 80, session_count: 2, last_studied: "May 21",
-    history: [
-      { date: "May 21, 2025", quiz_score: 80, focus_score: 88, level_before: "intermediate", level_after: "advanced"     },
-      { date: "May 15, 2025", quiz_score: 60, focus_score: 72, level_before: "beginner",     level_after: "intermediate" },
-    ],
-  },
-  "g2-thermal": {
-    level: "beginner", last_score: 28, session_count: 1, last_studied: "May 20",
-    history: [
-      { date: "May 20, 2025", quiz_score: 28, focus_score: null, level_before: "beginner", level_after: "beginner" },
-    ],
-  },
-  "g2-solubility": {
-    level: "intermediate", last_score: 55, session_count: 2, last_studied: "May 19",
-    history: [
-      { date: "May 19, 2025", quiz_score: 55, focus_score: 67, level_before: "beginner",      level_after: "intermediate" },
-      { date: "May 14, 2025", quiz_score: 38, focus_score: 55, level_before: "beginner",      level_after: "beginner"     },
-    ],
-  },
-  "g2-flame": {
-    level: "beginner", last_score: 0, session_count: 0, last_studied: null,
-    history: [],
-  },
-};
->>>>>>> 1aeca1be5e804b85d646b87891612e0e9c2b7d4e

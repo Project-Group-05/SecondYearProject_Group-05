@@ -32,10 +32,17 @@
   letter-spacing: 0.05em;
 }
 
-.subtopicHeader {
-  font-size: 1.25rem;
-  margin: 0;
-  font-weight: 600;
+.logoAccent {
+  color: #60A5FA; 
+}
+
+.appNameText {
+  color: white; 
+  font-size: 2rem; 
+  font-weight: 900; 
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+  text-align: center;
 }
 
 .workspaceLayout {
@@ -276,6 +283,47 @@
   cursor: not-allowed;
 }
 
+.gateCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 40px 32px;
+  text-align: center;
+  max-width: 540px;
+  margin: 40px auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.gateIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.gateTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1A2B5F;
+  margin: 0 0 12px 0;
+}
+
+.gateText {
+  font-size: 15px;
+  color: #4B5563;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.gateBtn {
+  color: #FFFFFF;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  background-color: #1A2B5F;
+}
 @media (max-width: 840px) {
   .splitContentGrid {
     grid-template-columns: 1fr;
