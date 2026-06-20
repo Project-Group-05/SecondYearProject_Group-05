@@ -176,3 +176,26 @@
 .helpText a:hover {
   text-decoration: underline;
 }
+
+
+.paragraphText table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.paragraphText th,
+.paragraphText td {
+  border: 1px solid #E2E8F0;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.paragraphText th {
+  background-color: #F8FAFC;
+  font-weight: 600;
+}
+
+.paragraphText strong {
+  color: #1A2B5F;
+}
