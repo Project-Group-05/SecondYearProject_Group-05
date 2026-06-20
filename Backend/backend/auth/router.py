@@ -5,6 +5,10 @@ import os
 
 router = APIRouter()
 
+def get_student_bigint_id(email):
+    res = supabase.table("students").select("id").eq("email", email).single().execute()
+    return res.data["id"] if res.data else None
+
 
 # ── Email/Password Login ──────────────────────────────────────────────
 @router.post("/login")
@@ -46,7 +50,7 @@ async def login_with_email(request: Request):
                 .execute()
 
         return success_response("Login successful!", {
-            "id": auth_res.user.id,
+            "id": student_data["id"],
             "email": student_data["email"],
             "name": student_data["name"],
             "diagnostic_completed": student_data["diagnostic_completed"],
@@ -116,13 +120,14 @@ async def google_callback(code: str):
                 "diagnostic_completed": False
             }).execute()
             student_data = inserted.data[0]
+            
 
             # Seed default progress rows
             subtopics = supabase.table("subtopics").select("id").execute()
             if subtopics.data:
                 progress_rows = [
                     {
-                        "student_id": user_uuid,
+                        "student_id": student_data["id"],
                         "subtopic_id": topic["id"],
                         "current_level": "Beginner",
                         "last_quiz_score": 0,
@@ -136,7 +141,7 @@ async def google_callback(code: str):
                 ).execute()
 
         return success_response("Google login successful!", {
-            "id": user_uuid,
+            "id": student_data["id"],
             "email": student_data["email"],
             "name": student_data["name"],
             "diagnostic_completed": student_data["diagnostic_completed"],
@@ -188,13 +193,15 @@ async def register_with_email(request: Request):
 
         if not db_res.data:
             return error_response("Failed to save profile. Please try again.")
+        
+        student_data = db_res.data[0]
 
         subtopics = supabase.table("subtopics").select("id").execute()
 
         if subtopics.data:
             progress_rows = [
                 {
-                    "student_id": user_uuid,
+                    "student_id": student_data["id"],
                     "subtopic_id": topic["id"],
                     "current_level": "Beginner",
                     "last_quiz_score": 0,
@@ -208,7 +215,7 @@ async def register_with_email(request: Request):
             ).execute()
 
         return success_response("Registration successful!", {
-            "id": user_uuid,
+            "id": student_data["id"],
             "email": email,
             "name": full_name,
             "diagnostic_completed": False,
@@ -271,12 +278,13 @@ async def google_token(request: Request):
                 "diagnostic_completed": False
             }).execute()
             student_data = inserted.data[0]
+            
 
             subtopics = supabase.table("subtopics").select("id").execute()
             if subtopics.data:
                 progress_rows = [
                     {
-                        "student_id": user_uuid,
+                        "student_id": student_data["id"],
                         "subtopic_id": topic["id"],
                         "current_level": "Beginner",
                         "last_quiz_score": 0,
@@ -290,7 +298,7 @@ async def google_token(request: Request):
                 ).execute()
 
         return success_response("Google login successful!", {
-            "id": user_uuid,
+            "id": student_data["id"],
             "email": student_data["email"],
             "name": student_data["name"],
             "diagnostic_completed": student_data["diagnostic_completed"],
