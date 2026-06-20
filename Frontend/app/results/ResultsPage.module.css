@@ -1,0 +1,204 @@
+.container {
+  min-height: calc(100vh - 70px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #F9FAFB;
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.breadcrumbWrapper {
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.backLink {
+  color: #6B7280;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.backLink:hover {
+  color: #1A2B5F;
+  text-decoration: underline;
+}
+
+.glassCard {
+  background: #FFFFFF;
+  padding: 40px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  text-align: center;
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+.metaBadgeRow {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.groupBadge {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.levelBadge {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Color Coding Themes matching system schema */
+.badgeBeginner { background-color: #FEF2F2; color: #991B1B; }
+.badgeIntermediate { background-color: #FFFBEB; color: #92400E; }
+.badgeAdvanced { background-color: #ECFDF5; color: #065F46; }
+
+.appNameText {
+  color: #1A2B5F;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Score Circle Branding Element */
+.scoreVisualCenter {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 30px;
+}
+
+.scoreCircle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background-color: #F0F4FF;
+  border: 4px solid #1A56DB; /* Secondary blue focus ring */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.hugeScoreNum {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1A2B5F;
+}
+
+.scoreLabel {
+  font-size: 0.75rem;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.contentBodyArea {
+  text-align: center;
+}
+
+/* Data Grid Structure */
+.statsOverviewRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.statBoxCard, .statBoxCardSuccess, .statBoxCardDanger {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statBoxCardSuccess { background-color: #ECFDF5; border-color: #A7F3D0; }
+.statBoxCardDanger { background-color: #FEF2F2; border-color: #FCA5A5; }
+
+.statValueText { font-size: 1.3rem; font-weight: 700; color: #1F2937; }
+.statValueTextCorrect { font-size: 1.3rem; font-weight: 700; color: #065F46; }
+.statValueTextIncorrect { font-size: 1.3rem; font-weight: 700; color: #991B1B; }
+
+.statLabelText {
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.paragraphText {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #4B5563;
+  margin: 0;
+  text-align: center;
+}
+
+.registerBtn {
+  width: 100%;
+  padding: 14px;
+  background-color: #1A2B5F; /* Primary Navy */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.registerBtn:hover {
+  background-color: #162450;
+}
+
+.footer {
+  margin-top: 10px;
+  border-top: 1px solid #E5E7EB;
+  padding-top: 15px;
+  text-align: center;
+}
+
+.footer p {
+  color: #6B7280;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.footer a {
+  color: #1A56DB;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 3px;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
