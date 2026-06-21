@@ -6,12 +6,18 @@ import styles from './quiz.module.css';
 
 export default function QuizForm() {
   const router = useRouter();
+  const BACKEND_URL = "http://127.0.0.1:8000";
 
   // Hardware Verification States
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraStatus, setCameraStatus] = useState('idle');
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+
+  // 🛡️ Focus Guardian Core States & Refs
+  const [isDistracted, setIsDistracted] = useState(false);
+  const [aiMessage, setAiMessage] = useState("Monitoring Feed Active 🟢");
+  const canvasRef = useRef(null);
 
   // Core Quiz States
   const [questions, setQuestions] = useState([]);
@@ -27,6 +33,53 @@ export default function QuizForm() {
   // Controls the custom post-submit results dialog box
   const [quizResult, setQuizResult] = useState(null);
 
+  // 🔄 Focus Guardian: Automated background frame-polling loop
+  useEffect(() => {
+    // Only poll frames if camera is authorized and quiz isn't completed
+    if (!isCameraActive || quizResult) return;
+
+    const intervalId = setInterval(() => {
+      captureAndSendFrame();
+    }, 2500); 
+
+    return () => clearInterval(intervalId);
+  }, [isCameraActive, quizResult]);
+
+  const captureAndSendFrame = async () => {
+    if (!videoRef.current || !canvasRef.current || quizResult) return;
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const ctx = canvas.getContext('2d');
+
+    // Snapshot the video frame grid matrix onto the hidden background canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Compress to a safe, lightweight JPEG binary block
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+
+      const formData = new FormData();
+      formData.append("file", blob, "snapshot.jpg");
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/behaviour/analyze-frame`, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Push AI classification verdicts straight to layout state vectors
+          setAiMessage(data.data.distracted ? data.data.message : "Monitoring Feed Active 🟢");
+          setIsDistracted(data.data.distracted);
+        }
+      } catch (err) {
+        console.error("AI proctoring network drop:", err);
+      }
+    }, "image/jpeg", 0.7); // 70% compression handles processing without scaling up Mac fan speed
+  };
+
   // 1. Fetch questions from FastAPI backend on mount
   useEffect(() => {
     async function fetchQuestions() {
@@ -35,7 +88,6 @@ export default function QuizForm() {
         const response = await fetch('http://localhost:8000/diagnostic/questions');
         const resData = await response.json();
 
-        // Unwraps from your success_response utility wrapper: { success, data: { questions } }
         if (resData.success && resData.data?.questions) {
           setQuestions(resData.data.questions);
         } else {
@@ -49,7 +101,6 @@ export default function QuizForm() {
     }
     fetchQuestions();
 
-    // Cleanup camera streams if the user leaves the page abruptly
     return () => {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -118,7 +169,6 @@ export default function QuizForm() {
     setShowConfirmModal(true);
   };
 
-  // Centralized submission dispatcher hitting FastAPI
   const executeDatabaseWrite = async (isForcedByTimeout = false) => {
     setShowConfirmModal(false);
     setIsSubmitting(true);
@@ -154,17 +204,14 @@ export default function QuizForm() {
 
       const reportSummary = resultData.data.results;
 
-      // ── ✅ FIX 1: Mark diagnostic complete in DB ──────────────────
       await fetch('http://localhost:8000/diagnostic/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ student_id: studentId })
       });
 
-      // ── ✅ FIX 2: Update localStorage so next navigation is correct ─
       const updatedStudent = { ...user, diagnostic_completed: true };
       localStorage.setItem('student', JSON.stringify(updatedStudent));
-      // ─────────────────────────────────────────────────────────────
 
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
@@ -179,7 +226,6 @@ export default function QuizForm() {
 
     } catch (err) {
       console.error("Submission crash:", err.message);
-      console.error(`Could not record your metrics: ${err.message}`);
       router.push('/dashboard');
     } finally {
       setIsSubmitting(false);
@@ -193,15 +239,13 @@ export default function QuizForm() {
   if (isLoading) return <div className={styles.loadingPlaceholder}>Assembling quiz framework...</div>;
   if (!questions.length) return <div className={styles.loadingPlaceholder}>No quiz questions found in database.</div>;
 
-  // --- GATEWAY LOOK: Proctor Verification Required ---
   if (!isCameraActive) {
     return (
       <div className={styles.gateCard}>
         <div className={styles.gateIcon}>🔒</div>
         <h2 className={styles.gateTitle}>Webcam Activation Required</h2>
         <p className={styles.gateText}>
-          This exam requires an active webcam feed.
-          Please enable your device camera!
+          This exam requires an active webcam feed. Please enable your device camera!
         </p>
 
         <div style={{ margin: '12px 0', minHeight: '24px', fontSize: '14px' }}>
@@ -214,9 +258,7 @@ export default function QuizForm() {
           onClick={startCameraHardware}
           disabled={cameraStatus === 'loading'}
           className={styles.gateBtn}
-          style={{
-            backgroundColor: cameraStatus === 'loading' ? '#9CA3AF' : '#1A2B5F'
-          }}
+          style={{ backgroundColor: cameraStatus === 'loading' ? '#9CA3AF' : '#1A2B5F' }}
         >
           {cameraStatus === 'loading' ? 'Connecting...' : 'Authorize & Launch Camera'}
         </button>
@@ -237,7 +279,6 @@ export default function QuizForm() {
 
   return (
     <form onSubmit={openConfirmationModal} className={styles.quizFormLayout}>
-      {/* Timer Element */}
       <div className={`${styles.timerRow} ${timeLeft < 60 ? styles.timerUrgent : ''}`}>
         <span className={styles.timerIcon}>⏱</span>
         <span className={styles.timeDigits}>
@@ -248,19 +289,45 @@ export default function QuizForm() {
       <div className={styles.splitContentGrid}>
         {/* Proctoring Side Bar Panel */}
         <aside className={styles.webcamPanel}>
-          <div className={styles.webcamBox}>
+          {/* Dynamic Border Alert Layer: Flashes red when distracted state triggers */}
+          <div 
+            className={styles.webcamBox} 
+            style={{ 
+              border: quizResult ? '3px solid #9CA3AF' : isDistracted ? '4px solid #EF4444' : '3px solid #10B981',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              transition: 'all 0.2s ease'
+            }}
+          >
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }}
             />
+            {/* Hidden snapshot generation processing canvas */}
+            <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
           </div>
+          
           <div className={styles.proctoringRules}>
-            <p style={{ color: quizResult ? '#6B7280' : '#059669', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ inlineSize: '8px', blockSize: '8px', backgroundColor: quizResult ? '#9CA3AF' : '#10B981', borderRadius: '50%' }}></span>
-              {quizResult ? 'Monitoring Feed Off' : 'Monitoring Feed Active'}
+            {/* Dynamic Status Text Banner Integration */}
+            <p style={{ 
+              color: quizResult ? '#6B7280' : isDistracted ? '#EF4444' : '#059669', 
+              fontWeight: 'bold', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              transition: 'color 0.2s ease'
+            }}>
+              <span style={{ 
+                inlineSize: '8px', 
+                blockSize: '8px', 
+                backgroundColor: quizResult ? '#9CA3AF' : isDistracted ? '#EF4444' : '#10B981', 
+                borderRadius: '50%',
+                transition: 'background-color 0.2s ease'
+              }}></span>
+              {quizResult ? 'Monitoring Feed Off' : aiMessage}
             </p>
             <p>• Ensure your face remains entirely visible.</p>
             <p>• Avoid looking away or swapping browser tabs.</p>
@@ -310,6 +377,7 @@ export default function QuizForm() {
               <button
                 type="submit"
                 className={styles.finishBtn}
+                disabled={isSubmitting || quizResult !== null}
               >
                 {isSubmitting ? "Processing..." : "Submit Answers"}
               </button>
@@ -318,7 +386,7 @@ export default function QuizForm() {
                 type="button"
                 className={styles.nextBtn}
                 onClick={() => setCurrentIndex(prev => prev + 1)}
-                
+                disabled={quizResult !== null}
               >
                 Next Question →
               </button>

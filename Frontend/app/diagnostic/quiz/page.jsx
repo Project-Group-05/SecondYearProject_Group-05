@@ -1,4 +1,6 @@
-// 1. We look for the completely lowercase file, but name the variable with a Capital Q!
+"use client";
+
+import React from 'react';
 import QuizForm from './quizform'; 
 import styles from './quiz.module.css';
 
@@ -15,8 +17,7 @@ export default function QuizPage() {
 
       {/* Main Core Layout Grid */}
       <div className={styles.workspaceLayout}>
-        {/* 2. Capitalized tag makes your editor linter completely happy! */}
-        <QuizForm/> 
+        <QuizForm /> 
       </div>
     </main>
   );
