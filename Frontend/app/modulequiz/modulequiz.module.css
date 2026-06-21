@@ -1,0 +1,270 @@
+/* ==========================================================================
+   Page Workspace Layout Containers
+   ========================================================================== */
+.container {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #F9FAFB; /* Gray base workspace variant */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.taskBanner {
+  background-color: #1A2B5F; /* Corporate identity primary dark Navy */
+  padding: 20px 40px;
+  color: #FFFFFF;
+}
+
+.bannerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.assessmentBadge {
+  background-color: #1A56DB; /* Utility secondary blue accent */
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.appNameText {
+  color: #FFFFFF; 
+  font-size: 2rem; 
+  font-weight: 900; 
+  letter-spacing: -1px;
+  margin: 0;
+}
+
+.logoAccent {
+  color: #60A5FA; 
+}
+
+.workspaceLayout {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.formStructure {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* ==========================================================================
+   Linear Progress Bar UI Tracker Elements
+   ========================================================================== */
+.progressContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 6px;
+  background-color: #E5E7EB;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #1A56DB;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progressLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4B5563;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Question Cards & Selection Triggers
+   ========================================================================== */
+.questionCard {
+  width: 100%;
+}
+
+.questionText {
+  font-size: 1.3rem;
+  color: #111827;
+  font-weight: 600;
+  margin: 0 0 24px 0;
+  line-height: 1.4;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.optionItem:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+.optionSelected {
+  background-color: #EFF6FF !important;
+  border-color: #1A56DB !important;
+}
+
+.optionMarker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: #F3F4F6;
+  border-radius: 6px;
+  font-weight: 700;
+  color: #4B5563;
+  margin-right: 16px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.optionSelected .optionMarker {
+  background-color: #1A56DB;
+  color: #FFFFFF;
+}
+
+.optionContent {
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.optionSelected .optionContent {
+  color: #1E40AF;
+}
+
+.gateCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 40px 32px;
+  text-align: center;
+  max-width: 540px;
+  margin: 40px auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.gateIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.gateTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1A2B5F;
+  margin: 0 0 12px 0;
+}
+
+.gateText {
+  font-size: 15px;
+  color: #4B5563;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.gateBtn {
+  color: #FFFFFF;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  background-color: #1A2B5F;
+}
+
+/* ==========================================================================
+   Footer Component Action Row Buttons
+   ========================================================================== */
+.navigationControl {
+  border-top: 1px solid #F3F4F6;
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.backBtn {
+  background: none;
+  border: 1px solid #D1D5DB;
+  color: #4B5563;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+
+.backBtn:hover:not(:disabled) {
+  background-color: #F3F4F6;
+}
+
+.backBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nextBtn, .submitBtn {
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 28px;
+  cursor: pointer;
+  color: #FFFFFF;
+  transition: opacity 0.2s;
+}
+
+.nextBtn { background-color: #1A56DB; }
+.submitBtn { background-color: #065F46; } /* Evaluation Success Green */
+
+.nextBtn:hover, .submitBtn:hover { opacity: 0.95; }
+.nextBtn:disabled, .submitBtn:disabled {
+  background-color: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}

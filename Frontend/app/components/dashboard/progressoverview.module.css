@@ -1,0 +1,107 @@
+.overviewWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  width: 100%;
+}
+
+.groupContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.groupHeading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a56db; 
+  margin: 0 0 12px 0;
+  letter-spacing: -0.02em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 24px;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.nameSection {
+  flex: 2;
+  min-width: 180px;
+}
+
+.subtopicName {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.progressSection {
+  flex: 3;
+}
+
+.progressBarContainer {
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 99px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Progress Colors */
+.fillBeginner { background-color: #b91c1c; }
+.fillIntermediate { background-color: #d97706; }
+.fillAdvanced { background-color: #059669; }
+
+.badgeSection {
+  flex: 1.2;
+  display: flex;
+  justify-content: center;
+}
+
+.badgeBase {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  display: inline-block;
+  min-width: 90px;
+}
+
+/* Badge Color Variations */
+.badgeBeginner { background-color: #fef2f2; color: #b91c1c; }
+.badgeIntermediate { background-color: #fffbeb; color: #92400e; }
+.badgeAdvanced { background-color: #ecfdf5; color: #065f46; }
+
+.statsSection {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.statText {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.statusLabel {
+  font-size: 14px;
+  color: #9ca3af;
+  padding: 16px 0;
+}

@@ -1,0 +1,331 @@
+.container {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #F9FAFB; /* Base workspace gray standard styling rules */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Focused Top Banner Rules */
+.taskBanner {
+  background-color: #1A2B5F; /* Corporate identity primary dark Navy */
+  padding: 20px 40px;
+  color: #FFFFFF;
+}
+
+.bannerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.assessmentBadge {
+  background-color: #1A56DB; /* Utility secondary blue accent */
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.logoAccent {
+  color: #60A5FA; 
+}
+
+.appNameText {
+  color: white; 
+  font-size: 2rem; 
+  font-weight: 900; 
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.workspaceLayout {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.quizFormLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Countdown Alert Box Panel */
+.timerRow {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.timerUrgent {
+  border-color: #FCA5A5;
+  background-color: #FEF2F2;
+  color: #991B1B; /* System Warning/Danger red */
+  animation: pulse border 1s infinite alternate;
+}
+
+.timerIcon { font-size: 1.2rem; }
+
+.timeDigits {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Split-Screen System Architecture Grid */
+.splitContentGrid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Webcam Procurement Panel Rules */
+.webcamPanel {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.webcamBox {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: #111827; /* Dark framing block overlay mimicry */
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.cameraPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #9CA3AF;
+  padding: 16px;
+}
+
+.cameraDot {
+  color: #EF4444; /* Standard recording point warning indicator */
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.cameraText {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #E5E7EB;
+  margin: 0 0 4px 0;
+}
+
+.subText { font-size: 0.75rem; color: #6B7280; }
+
+.proctoringRules {
+  font-size: 0.8rem;
+  color: #4B5563;
+  line-height: 1.5;
+}
+
+.proctoringRules p { margin: 6px 0; }
+
+/* Question Cards Interface Elements */
+.questionSection {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.questionHeader {
+  border-bottom: 1px solid #F3F4F6;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+}
+
+.questionCount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6B7280;
+  text-transform: uppercase;
+}
+
+.questionText {
+  font-size: 1.3rem;
+  color: #111827;
+  font-weight: 600;
+  margin: 0 0 28px 0;
+  line-height: 1.4;
+}
+
+.optionsStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 16px 20px;
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.optionRow:hover {
+  background-color: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+.optionActive {
+  background-color: #EFF6FF !important;
+  border-color: #1A56DB !important;
+}
+
+.optionIndex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: #F3F4F6;
+  border-radius: 6px;
+  font-weight: 700;
+  color: #4B5563;
+  margin-right: 16px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.optionActive .optionIndex {
+  background-color: #1A56DB;
+  color: #FFFFFF;
+}
+
+.optionLabel {
+  color: #374151;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.optionActive .optionLabel {
+  color: #1E40AF;
+}
+
+/* Command Button Control Row Panels */
+.formActions {
+  margin-top: auto;
+  border-top: 1px solid #F3F4F6;
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.prevBtn {
+  background: none;
+  border: 1px solid #D1D5DB;
+  color: #4B5563;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prevBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nextBtn, .finishBtn {
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 12px 28px;
+  cursor: pointer;
+  color: #FFFFFF;
+}
+
+.nextBtn { background-color: #1A56DB; }
+.finishBtn { background-color: #065F46; } /* Metric target dark emerald green standard tokens */
+
+.nextBtn:disabled, .finishBtn:disabled {
+  background-color: #E5E7EB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
+.gateCard {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 40px 32px;
+  text-align: center;
+  max-width: 540px;
+  margin: 40px auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.gateIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.gateTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1A2B5F;
+  margin: 0 0 12px 0;
+}
+
+.gateText {
+  font-size: 15px;
+  color: #4B5563;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.gateBtn {
+  color: #FFFFFF;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  background-color: #1A2B5F;
+}
+@media (max-width: 840px) {
+  .splitContentGrid {
+    grid-template-columns: 1fr;
+  }
+}

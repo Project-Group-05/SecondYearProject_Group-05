@@ -1,0 +1,93 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #F3F4F6;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  width: 100%;
+  max-width: 480px;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.iconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.iconCircle {
+  width: 80px;
+  height: 80px;
+  background: #EBF5FF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.iconCircleSuccess {
+  width: 80px;
+  height: 80px;
+  background: #ECFDF5;
+  color: #059669;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.title {
+  color: #1A2B5F; /* Navy Primary */
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+
+.description {
+  color: #6B7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.statusBox {
+  min-height: 40px;
+  margin-bottom: 24px;
+}
+
+.infoText { color: #4B5563; }
+.successText { color: #059669; font-weight: bold; }
+.errorText { color: #DC2626; font-size: 0.85rem; }
+
+.actionArea {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.skipLink {
+  background: none;
+  border: none;
+  color: #1A56DB; /* Secondary Blue */
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.footerNote {
+  margin-top: 32px;
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  border-top: 1px solid #F3F4F6;
+  padding-top: 16px;
+}

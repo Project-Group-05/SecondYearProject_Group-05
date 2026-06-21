@@ -1,0 +1,201 @@
+.container {
+  min-height: calc(100vh - 70px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #F9FAFB;
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.breadcrumbWrapper {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.backLink {
+  color: #6B7280;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.backLink:hover {
+  color: #1A2B5F;
+  text-decoration: underline;
+}
+
+.glassCard {
+  background: #FFFFFF;
+  padding: 40px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  text-align: left;
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+.metaBadgeRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.groupBadge {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.levelBadge {
+  background-color: #FFFBEB;
+  color: #92400E;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.appNameText {
+  color: #1A2B5F;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.contentBodyArea {
+  text-align: left;
+  color: #1F2937;
+  min-height: 180px; /* Stabilizes layouts across varying step heights */
+}
+
+.paragraphText {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0 0 20px 0;
+}
+
+.calloutBlock {
+  border-left: 4px solid #1A2B5F;
+  background-color: #EFF6FF;
+  padding: 16px;
+  margin: 0;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.95rem;
+  color: #1E3A8A;
+}
+
+/* Diagnostic Progress Bar Tracker */
+.progressBarWrapper {
+  height: 6px;
+  width: 100%;
+  background-color: #E5E7EB;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: #1A56DB; /* Accent Blue */
+  transition: width 0.3s ease-in-out;
+}
+
+.registerBtn {
+  width: 100%;
+  padding: 14px;
+  background-color: #1A2B5F; /* Primary Navy */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.registerBtn:hover {
+  background-color: #162450;
+}
+
+.footer {
+  margin-top: 10px;
+  border-top: 1px solid #E5E7EB;
+  padding-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.backButtonInline {
+  background: none;
+  border: none;
+  color: #1A56DB;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.backButtonInline:hover {
+  text-decoration: underline;
+}
+
+.helpText {
+  color: #6B7280;
+  font-size: 0.85rem;
+  margin: 0;
+  margin-left: auto; /* Ensures proper alignment if back button is hidden */
+}
+
+.helpText a {
+  color: #1A56DB;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.helpText a:hover {
+  text-decoration: underline;
+}
+
+
+.paragraphText table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.paragraphText th,
+.paragraphText td {
+  border: 1px solid #E2E8F0;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.paragraphText th {
+  background-color: #F8FAFC;
+  font-weight: 600;
+}
+
+.paragraphText strong {
+  color: #1A2B5F;
+}
