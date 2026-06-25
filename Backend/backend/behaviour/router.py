@@ -1,54 +1,47 @@
-from fastapi import APIRouter, UploadFile, File
-from utils.response import success_response, error_response
 import cv2
 import numpy as np
-from ultralytics import YOLO
+from fastapi import APIRouter, File, UploadFile
 
-router = APIRouter()
-
-# 🧠 Load the ultra-lightweight YOLOv8 Nano model
-# (It will automatically download the 6MB 'yolov8n.pt' weights file on your first test run)
-model = YOLO("yolov8n.pt")
+router = APIRouter(tags=["Behaviour"])
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 @router.post("/analyze-frame")
 async def analyze_frame(file: UploadFile = File(...)):
     try:
-        # 1. Convert the incoming browser snapshot data into an OpenCV image matrix
         contents = await file.read()
         nparr = np.frombuffer(contents, np.uint8)
-        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return {"success": False, "message": "Failed to parse image frame grid stream."}
 
-        if frame is None:
-            return error_response("Invalid image frame received.")
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(80, 80))
+        face_count = len(faces)
 
-        # 2. Fire the frame through the Neural Network
-        results = model(frame, verbose=False)[0]
-        
-        detected_objects = []
-        is_distracted = False
-        alert_message = "Student is focused 🟢"
-
-        # 3. Read the classification labels from the model's bounding boxes
-        for box in results.boxes:
-            class_id = int(box.cls[0])
-            object_name = model.names[class_id]
-            detected_objects.append(object_name)
-
-            # 📱 Trigger distraction flag if a phone enters the frame matrix
-            if object_name == "cell phone":
-                is_distracted = True
-                alert_message = "📱 Phone Usage Detected! Please stay focused on your studies."
-
-        # 👤 Trigger warning if the student walks out of the camera's bounding box
-        if "person" not in detected_objects:
-            is_distracted = True
-            alert_message = "⚠️ No student detected! Please remain in front of the camera feed."
-
-        return success_response("Frame parsed successfully", {
-            "distracted": is_distracted,
-            "message": alert_message,
-            "objects": detected_objects
-        })
-
+        if face_count == 0:
+            return {
+                "success": True,
+                "data": {
+                    "distracted": True,
+                    "message": "❌ No student detected! Please remain in front of the camera feed."
+                }
+            }
+        elif face_count > 1:
+            return {
+                "success": True,
+                "data": {
+                    "distracted": True,
+                    "message": "⚠️ Multiple faces detected! Ensure you are evaluating alone."
+                }
+            }
+        else:
+            return {
+                "success": True,
+                "data": {
+                    "distracted": False,
+                    "message": "Monitoring Feed Active 🟢"
+                }
+            }
     except Exception as e:
-        return error_response(f"AI Matrix processing error: {str(e)}")
+        print(f"Behaviour tracking error: {str(e)}")
+        return {"success": False, "message": f"Internal tracking crash: {str(e)}"}
