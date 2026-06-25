@@ -35,7 +35,6 @@ export default function QuizForm() {
 
   // 🔄 Focus Guardian: Automated background frame-polling loop
   useEffect(() => {
-    // Only poll frames if camera is authorized and quiz isn't completed
     if (!isCameraActive || quizResult) return;
 
     const intervalId = setInterval(() => {
@@ -52,10 +51,8 @@ export default function QuizForm() {
     const video = videoRef.current;
     const ctx = canvas.getContext('2d');
 
-    // Snapshot the video frame grid matrix onto the hidden background canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Compress to a safe, lightweight JPEG binary block
     canvas.toBlob(async (blob) => {
       if (!blob) return;
 
@@ -70,14 +67,13 @@ export default function QuizForm() {
         const data = await res.json();
 
         if (data.success) {
-          // Push AI classification verdicts straight to layout state vectors
           setAiMessage(data.data.distracted ? data.data.message : "Monitoring Feed Active 🟢");
           setIsDistracted(data.data.distracted);
         }
       } catch (err) {
         console.error("AI proctoring network drop:", err);
       }
-    }, "image/jpeg", 0.7); // 70% compression handles processing without scaling up Mac fan speed
+    }, "image/jpeg", 0.7); 
   };
 
   // 1. Fetch questions from FastAPI backend on mount
@@ -108,9 +104,9 @@ export default function QuizForm() {
     };
   }, []);
 
-  // 2. Countdown Timer Loop
+  // 2. Countdown Timer Loop (Pauses countdown when frozen to be fair to students)
   useEffect(() => {
-    if (isLoading || !questions.length || !isCameraActive || quizResult) return;
+    if (isLoading || !questions.length || !isCameraActive || quizResult || isDistracted) return;
 
     if (timeLeft <= 0) {
       autoSubmitQuiz();
@@ -122,7 +118,7 @@ export default function QuizForm() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, isLoading, questions.length, isCameraActive, quizResult]);
+  }, [timeLeft, isLoading, questions.length, isCameraActive, quizResult, isDistracted]);
 
   // 3. Hardware Authorization Call
   const startCameraHardware = async () => {
@@ -156,6 +152,7 @@ export default function QuizForm() {
   };
 
   const handleOptionSelect = (optionLetter) => {
+    if (isDistracted) return; // Fail-safe block
     setSelectedAnswers(prev => ({ ...prev, [currentIndex]: optionLetter }));
   };
 
@@ -166,6 +163,7 @@ export default function QuizForm() {
 
   const openConfirmationModal = (e) => {
     if (e) e.preventDefault();
+    if (isDistracted) return; // Prevent submission actions while flagged
     setShowConfirmModal(true);
   };
 
@@ -279,17 +277,16 @@ export default function QuizForm() {
 
   return (
     <form onSubmit={openConfirmationModal} className={styles.quizFormLayout}>
-      <div className={`${styles.timerRow} ${timeLeft < 60 ? styles.timerUrgent : ''}`}>
-        <span className={styles.timerIcon}>⏱</span>
+      <div className={`${styles.timerRow} ${timeLeft < 60 ? styles.timerUrgent : ''} ${isDistracted ? styles.timerFrozen : ''}`}>
+        <span className={styles.timerIcon}>{isDistracted ? "⏸" : "⏱"}</span>
         <span className={styles.timeDigits}>
-          {timeLeft <= 0 ? "Time's Up!" : `Time Remaining: ${formatTime(timeLeft)}`}
+          {isDistracted ? "Exam Interrupted: Look back at the screen to resume" : timeLeft <= 0 ? "Time's Up!" : `Time Remaining: ${formatTime(timeLeft)}`}
         </span>
       </div>
 
       <div className={styles.splitContentGrid}>
         {/* Proctoring Side Bar Panel */}
         <aside className={styles.webcamPanel}>
-          {/* Dynamic Border Alert Layer: Flashes red when distracted state triggers */}
           <div 
             className={styles.webcamBox} 
             style={{ 
@@ -306,12 +303,10 @@ export default function QuizForm() {
               muted
               style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }}
             />
-            {/* Hidden snapshot generation processing canvas */}
             <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
           </div>
           
           <div className={styles.proctoringRules}>
-            {/* Dynamic Status Text Banner Integration */}
             <p style={{ 
               color: quizResult ? '#6B7280' : isDistracted ? '#EF4444' : '#059669', 
               fontWeight: 'bold', 
@@ -329,15 +324,24 @@ export default function QuizForm() {
               }}></span>
               {quizResult ? 'Monitoring Feed Off' : aiMessage}
             </p>
-            <p>• Ensure your face remains entirely visible.</p>
-            <p>• Avoid looking away or swapping browser tabs.</p>
+            <p style={{ color: isDistracted ? '#EF4444' : '#4B5563', transition: 'color 0.2s ease' }}>• Ensure your face remains entirely visible.</p>
+            <p style={{ color: isDistracted ? '#EF4444' : '#4B5563', transition: 'color 0.2s ease' }}>• Avoid looking away or swapping browser tabs.</p>
           </div>
         </aside>
 
-        {/* Core Multi-Choice Workspace */}
-        <section className={styles.questionSection}>
+        {/* 📖 Core Multi-Choice Workspace Section (Controlled by isDistracted) */}
+        <section 
+          className={styles.questionSection}
+          style={{
+            opacity: isDistracted ? 0.5 : 1,
+            pointerEvents: isDistracted ? 'none' : 'auto', // 🚫 Total interaction block lock
+            transition: 'all 0.2s ease'
+          }}
+        >
           <div className={styles.questionHeader}>
-            <span className={styles.questionCount}>Question {currentIndex + 1} of {questions.length}</span>
+            <span className={styles.questionCount}>
+              {isDistracted ? "⚠️ INTERFACE LOCKED" : `Question ${currentIndex + 1} of ${questions.length}`}
+            </span>
           </div>
 
           <div className={styles.questionCard}>
@@ -352,7 +356,7 @@ export default function QuizForm() {
                     type="button"
                     className={`${styles.optionRow} ${isSelected ? styles.optionActive : ''}`}
                     onClick={() => handleOptionSelect(option.key)}
-                    disabled={isSubmitting || quizResult !== null}
+                    disabled={isSubmitting || quizResult !== null || isDistracted} // 🔒 Locks answers
                   >
                     <span className={styles.optionIndex}>{option.key}</span>
                     <span className={styles.optionLabel}>{option.text}</span>
@@ -368,7 +372,7 @@ export default function QuizForm() {
               type="button"
               className={styles.prevBtn}
               onClick={() => setCurrentIndex(prev => prev - 1)}
-              disabled={currentIndex === 0 || quizResult !== null}
+              disabled={currentIndex === 0 || quizResult !== null || isDistracted} // 🔒 Locks Previous
             >
               ← Previous
             </button>
@@ -377,7 +381,7 @@ export default function QuizForm() {
               <button
                 type="submit"
                 className={styles.finishBtn}
-                disabled={isSubmitting || quizResult !== null}
+                disabled={isSubmitting || quizResult !== null || isDistracted} // 🔒 Locks Submit
               >
                 {isSubmitting ? "Processing..." : "Submit Answers"}
               </button>
@@ -386,7 +390,7 @@ export default function QuizForm() {
                 type="button"
                 className={styles.nextBtn}
                 onClick={() => setCurrentIndex(prev => prev + 1)}
-                disabled={quizResult !== null}
+                disabled={quizResult !== null || isDistracted} // 🔒 Locks Next
               >
                 Next Question →
               </button>
@@ -405,20 +409,8 @@ export default function QuizForm() {
               Are you sure you want to submit your answers? You cannot review or change them after submission.
             </p>
             <div style={modalStyles.actionRow}>
-              <button
-                type="button"
-                style={modalStyles.cancelBtn}
-                onClick={() => setShowConfirmModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                style={modalStyles.confirmBtn}
-                onClick={() => executeDatabaseWrite(false)}
-              >
-                Confirm Submit
-              </button>
+              <button type="button" style={modalStyles.cancelBtn} onClick={() => setShowConfirmModal(false)}>Cancel</button>
+              <button type="button" style={modalStyles.confirmBtn} onClick={() => executeDatabaseWrite(false)}>Confirm Submit</button>
             </div>
           </div>
         </div>
@@ -427,24 +419,12 @@ export default function QuizForm() {
       {/* --- RESULTS MODAL --- */}
       {quizResult && (
         <div style={modalStyles.overlay}>
-          <div style={{
-            ...modalStyles.dialogBox,
-            borderTop: quizResult.wasAutomated ? '6px solid #EF4444' : '6px solid #10B981'
-          }}>
-            <div style={{ ...modalStyles.icon, color: quizResult.wasAutomated ? '#EF4444' : '#10B981' }}>
-              {quizResult.wasAutomated ? '⏰' : '🎉'}
-            </div>
-
-            <h3 style={modalStyles.title}>
-              {quizResult.wasAutomated ? "Time's Up! Quiz Auto-Submitted" : "Assessment Completed!"}
-            </h3>
-
+          <div style={{ ...modalStyles.dialogBox, borderTop: quizResult.wasAutomated ? '6px solid #EF4444' : '6px solid #10B981' }}>
+            <div style={{ ...modalStyles.icon, color: quizResult.wasAutomated ? '#EF4444' : '#10B981' }}>{quizResult.wasAutomated ? '⏰' : '🎉'}</div>
+            <h3 style={modalStyles.title}>{quizResult.wasAutomated ? "Time's Up! Quiz Auto-Submitted" : "Assessment Completed!"}</h3>
             <p style={modalStyles.text}>
-              {quizResult.wasAutomated
-                ? "The evaluation period expired. Your captured progress has been securely locked and saved."
-                : "You have successfully completed your evaluation test."}
+              {quizResult.wasAutomated ? "The evaluation period expired. Your captured progress has been securely locked and saved." : "You have successfully completed your evaluation test."}
             </p>
-
             <div style={resultScoreCardStyle}>
               <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6B7280', fontWeight: '600', textTransform: 'uppercase' }}>Final Evaluation Score</p>
               <h2 style={{ margin: 0, fontSize: '36px', color: '#1A2B5F', fontWeight: '800' }}>{quizResult.percentage}%</h2>
@@ -452,15 +432,8 @@ export default function QuizForm() {
                 Answered <strong style={{ color: quizResult.wasAutomated ? '#EF4444' : '#10B981' }}>{quizResult.correct}</strong> out of <strong>{quizResult.total}</strong> correct
               </p>
             </div>
-
             <div style={modalStyles.actionRow}>
-              <button
-                type="button"
-                style={{ ...modalStyles.confirmBtn, width: '100%' }}
-                onClick={handleExitQuiz}
-              >
-                Go to Results
-              </button>
+              <button type="button" style={{ ...modalStyles.confirmBtn, width: '100%' }} onClick={handleExitQuiz}>Go to Results</button>
             </div>
           </div>
         </div>
@@ -469,7 +442,6 @@ export default function QuizForm() {
   );
 }
 
-// Global modal positioning system mappings
 const modalStyles = {
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' },
   dialogBox: { backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', maxWidth: '440px', width: '90%', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', animation: 'fadeIn 0.2s ease-out' },
