@@ -1,6 +1,6 @@
 from database import supabase
 
-def get_all_progress(student_id: str):  # ← str UUID
+def get_all_progress(student_id: int):  # ← str UUID
     progress = supabase.table("student_progress")\
         .select("*, subtopics(id, title, group_name)")\
         .eq("student_id", student_id)\
@@ -9,7 +9,7 @@ def get_all_progress(student_id: str):  # ← str UUID
 
     return progress.data
 
-def get_subtopic_progress(student_id: str, subtopic_id: int):  # ← str UUID
+def get_subtopic_progress(student_id: int, subtopic_id: int):  # ← str UUID
     progress = supabase.table("student_progress")\
         .select("*, subtopics(id, title, group_name)")\
         .eq("student_id", student_id)\
