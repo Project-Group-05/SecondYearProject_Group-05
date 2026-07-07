@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import styles from './progressoverview.module.css';
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 export default function ProgressOverview() {
   

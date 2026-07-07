@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './modulequiz.module.css';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
 export default function DiagnosticForm() {
   const router = useRouter();
 
@@ -13,36 +15,89 @@ export default function DiagnosticForm() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Timer State (e.g., 20 minutes countdown for a quick diagnostic)
-  const [timeLeft, setTimeLeft] = useState(1200); 
+  // 🛡️ Focus Guardian States
+  const [isDistracted, setIsDistracted] = useState(false);
+  const [aiMessage, setAiMessage] = useState("Monitoring Feed Active 🟢");
+  const canvasRef = useRef(null);
 
-  // Mock array matching data structures specified in your educational logic definitions
-  const questions = [
-    {
-      id: 1,
-      text: "Which of the following elements has the lowest first ionization energy?",
-      options: ["Lithium (Li)", "Sodium (Na)", "Potassium (K)", "Rubidium (Rb)"],
-      correctIndex: 3
-    },
-    {
-      id: 2,
-      text: "What product is formed when an alkali metal reacts vigorously with water?",
-      options: ["Metal Oxide + Hydrogen", "Metal Hydroxide + Hydrogen", "Metal Hydride + Oxygen", "Metal Oxide + Oxygen"],
-      correctIndex: 1
-    },
-    {
-      id: 3,
-      text: "Identify the correct trend for atomic radius down Group 2 elements.",
-      options: ["Decreases due to increasing nuclear charge", "Increases due to additional electron shells", "Remains constant", "Fluctuates unpredictably"],
-      correctIndex: 1
-    }
-  ];
-
+  // Dynamic Quiz Core States
+  const [questions, setQuestions] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
+  const [subtopicId, setSubtopicId] = useState(null);
+  const [studentId, setStudentId] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [timeLeft, setTimeLeft] = useState(1200); 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Hardware Authorization Stream Handlers
+  // Load subtopic and student parameters from localStorage and fetch quiz
+  useEffect(() => {
+    const subId = localStorage.getItem('current_subtopic_id') || 1;
+    const studId = localStorage.getItem('current_student_id') || 130;
+    setSubtopicId(subId);
+    setStudentId(studId);
+
+    async function loadQuizQuestions() {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/quiz/${subId}/${studId}`);
+        const result = await response.json();
+        if (result.success && result.data?.questions) {
+          setQuestions(result.data.questions);
+          setSessionId(result.data.session_id);
+        }
+      } catch (err) {
+        console.error("Failed to load subtopic quiz:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadQuizQuestions();
+  }, []);
+
+  // 🔄 Focus Guardian frame capture loop
+  useEffect(() => {
+    if (!isCameraActive || isSubmitting || questions.length === 0) return;
+
+    const intervalId = setInterval(() => {
+      captureAndSendFrame();
+    }, 2500);
+
+    return () => clearInterval(intervalId);
+  }, [isCameraActive, isSubmitting, questions.length]);
+
+  const captureAndSendFrame = async () => {
+    if (!videoRef.current || !canvasRef.current || questions.length === 0) return;
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+
+      const formData = new FormData();
+      formData.append("file", blob, "snapshot.jpg");
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/behaviour/analyze-frame`, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.success) {
+          setAiMessage(data.data.distracted ? data.data.message : "Monitoring Feed Active 🟢");
+          setIsDistracted(data.data.distracted);
+        }
+      } catch (err) {
+        console.error("AI Proctoring Network Drop:", err);
+      }
+    }, "image/jpeg", 0.7);
+  };
+
+  // Camera stream handler
   const startCameraHardware = async () => {
     setCameraStatus('loading');
     try {
@@ -66,14 +121,12 @@ export default function DiagnosticForm() {
     }
   };
 
-  // 2. Countdown Timer Lifecycle Hook Loop
+  // Countdown timer loop
   useEffect(() => {
-    if (!isCameraActive || isSubmitting) return;
+    if (!isCameraActive || isLoading || !questions.length || isSubmitting || isDistracted) return;
 
     if (timeLeft <= 0) {
-      // Auto-submit form natively when time drops to zero
-      const syntheticEvent = { preventDefault: () => {} };
-      handleSubmit(syntheticEvent);
+      autoSubmitQuiz();
       return;
     }
 
@@ -82,9 +135,9 @@ export default function DiagnosticForm() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, isCameraActive, isSubmitting]);
+  }, [timeLeft, isCameraActive, isLoading, questions.length, isSubmitting, isDistracted]);
 
-  // Clean up streams if the user abandons the page early
+  // Cleanup stream
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -99,10 +152,12 @@ export default function DiagnosticForm() {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  const optionLetters = ["A", "B", "C", "D"];
   const handleOptionSelect = (optionIndex) => {
+    if (isDistracted) return;
     setSelectedAnswers(prev => ({
       ...prev,
-      [currentIndex]: optionIndex
+      [currentIndex]: optionLetters[optionIndex]
     }));
   };
 
@@ -118,55 +173,87 @@ export default function DiagnosticForm() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const autoSubmitQuiz = () => {
+    executeSubmit(true);
+  };
+
+  const handleSubmit = (e) => {
     if (e) e.preventDefault();
+    if (isDistracted) return;
+    executeSubmit(false);
+  };
+
+  const executeSubmit = async (isForced = false) => {
     setIsSubmitting(true);
 
-    // Calculate total score percentage
-    let correctCount = 0;
-    questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctIndex) {
-        correctCount++;
+    const formattedAnswers = questions.map((q, idx) => ({
+      question_id: q.id,
+      student_answer: selectedAnswers[idx] || ""
+    }));
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/results/submit-quiz`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: Number(studentId),
+          session_id: Number(sessionId),
+          subtopic_id: Number(subtopicId),
+          webcam_enabled: isCameraActive,
+          answers: formattedAnswers
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('latest_quiz_result', JSON.stringify({
+          subtopic: data.data.subtopic_title || "Chemistry Quiz",
+          totalQuestions: data.data.total_questions,
+          correctAnswers: data.data.correct_answers,
+          percentage: data.data.quiz_score,
+          performanceLevel: data.data.new_level,
+          feedbackMessage: `Quiz evaluation registered completely. You scored ${data.data.quiz_score}%! Your level is updated to ${data.data.new_level}.`
+        }));
       }
-    });
-    const finalScore = Math.round((correctCount / questions.length) * 100);
 
-    // 🛑 DATABASE CONNECTION START 🛑
-    // If you need to persist this diagnostic in the future, fetch user/student parameters here:
-    // const { data: { user } } = await supabase.auth.getUser();
-    // await supabase.from('main_exam_attempts').insert([{ student_id: user.id, score_percentage: finalScore }]);
-    // 🛑 DATABASE CONNECTION END 🛑
-
-    // Shutdown device camera cleanly after database write/routing sequences trigger
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      router.push('/results');
+    } catch (err) {
+      console.error("Submission failed:", err);
+      router.push('/results');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    localStorage.setItem('diagnostic_completed', 'true');
-    router.push('/results');
   };
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '50vh', gap: '16px' }}>
+        <p style={{ color: '#64748b', fontWeight: '600' }}>Fetching assessment questions from server...</p>
+      </div>
+    );
+  }
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
-  const hasAnsweredCurrent = selectedAnswers[currentIndex] !== undefined;
-  const progressPercent = ((currentIndex + 1) / questions.length) * 100;
+  const progressPercent = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
 
-  // --- GATEWAY FRAME: Webcam Verification Required ---
+  // Camera check gateway screen
   if (!isCameraActive) {
     return (
-     <div className={styles.gateCard}>
-             <div className={styles.gateIcon}>🔒</div>
-             <h2 className={styles.gateTitle}>Webcam Activation Required</h2>
-             <p className={styles.gateText}>
-               This exam requires an active webcam feed. 
-               Please enable your device camera!
-             </p>
-             
-             <div style={{ margin: '12px 0', minHeight: '24px', fontSize: '14px' }}>
-               {cameraStatus === 'loading' && <p style={{ color: '#1A56DB' }}>Initializing video framework...</p>}
-               {cameraStatus === 'error' && <p style={{ color: '#EF4444', fontWeight: 'bold' }}>⚠ Camera access denied. Please check your system permission flags.</p>}
-             </div>
-
+      <div className={styles.gateCard}>
+        <div className={styles.gateIcon}>🔒</div>
+        <h2 className={styles.gateTitle}>Webcam Activation Required</h2>
+        <p className={styles.gateText}>
+          This assessment requires active webcam proctor monitoring. 
+          Please enable your device camera to launch.
+        </p>
+        <div style={{ margin: '12px 0', minHeight: '24px', fontSize: '14px' }}>
+          {cameraStatus === 'loading' && <p style={{ color: '#1A56DB' }}>Initializing camera hardware...</p>}
+          {cameraStatus === 'error' && <p style={{ color: '#EF4444', fontWeight: 'bold' }}>⚠ Webcam access denied. Check system privacy settings.</p>}
+        </div>
         <button
           type="button"
           onClick={startCameraHardware}
@@ -180,18 +267,29 @@ export default function DiagnosticForm() {
     );
   }
 
+  // Proctor lock shield
+  if (isDistracted) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '50vh', gap: '16px', padding: '30px', backgroundColor: '#FEF2F2', border: '3px solid #EF4444', borderRadius: '16px' }}>
+        <div style={{ fontSize: '48px' }}>🚨</div>
+        <h2 style={{ color: '#991B1B', fontWeight: '800' }}>Lock Protocol Active</h2>
+        <p style={{ color: '#7F1D1D', textAlign: 'center', maxWidth: '500px' }}>{aiMessage}</p>
+        <p style={{ color: '#991B1B', fontSize: '13px' }}>Return eye focus to the window and remove any portable devices to continue.</p>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className={styles.formStructure}>
-      
-      {/* Dynamic Timer Row Widget */}
+      {/* Timer display */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: timeLeft < 60 ? '#FEE2E2' : '#F3F4F6', borderRadius: '8px', marginBottom: '24px' }}>
         <span style={{ fontSize: '16px' }}>⏱</span>
         <span style={{ fontSize: '14px', fontWeight: '700', color: timeLeft < 60 ? '#991B1B' : '#374151' }}>
-          {timeLeft <= 0 ? "Time's Expired!" : `Time Remaining: ${formatTime(timeLeft)}`}
+          {timeLeft <= 0 ? "Time Expired!" : `Time Remaining: ${formatTime(timeLeft)}`}
         </span>
       </div>
 
-      {/* Visual Tracking Progress Indicator */}
+      {/* Progress */}
       <div className={styles.progressContainer}>
         <div className={styles.progressTrack}>
           <div 
@@ -199,89 +297,69 @@ export default function DiagnosticForm() {
             style={{ width: `${progressPercent}%` }}
           ></div>
         </div>
-        <span className={styles.progressLabel}>
-          Question {currentIndex + 1} of {questions.length}
-        </span>
+        <span className={styles.progressText}>Question {currentIndex + 1} of {questions.length}</span>
       </div>
 
-      {/* Split Structural Interface View Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '24px', alignItems: 'start', marginBottom: '32px' }}>
-        
-        {/* Proctor Sidebar Panel Card */}
-        <aside style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ width: '100%', height: '140px', backgroundColor: '#000', borderRadius: '8px', overflow: 'hidden' }}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </div>
-          <div style={{ fontSize: '12px', color: '#6B7280', lineHeight: '1.4' }}>
-            <p style={{ color: '#059669', fontWeight: 'bold', margin: '0 0 6px 0' }}>• Tracking Stream Active</p>
-            <p style={{ margin: '0 0 4px 0' }}>• Keep your face centered inside the frame.</p>
-            <p style={{ margin: 0 }}>• Do not exit the active browser viewport context.</p>
-          </div>
-        </aside>
-
-        {/* Main Question Card Structure */}
-        <div className={styles.questionCard} style={{ margin: 0 }}>
-          <h2 className={styles.questionText}>{currentQuestion.text}</h2>
+      {/* Question rendering */}
+      {currentQuestion && (
+        <div className={styles.questionCard}>
+          <h3 className={styles.questionText}>{currentQuestion.question_text}</h3>
           
           <div className={styles.optionsList}>
-            {currentQuestion.options.map((option, index) => {
-              const isSelected = selectedAnswers[currentIndex] === index;
+            {[currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d].map((opt, idx) => {
+              const letter = optionLetters[idx];
+              const isSelected = selectedAnswers[currentIndex] === letter;
               return (
                 <button
-                  key={index}
+                  key={idx}
                   type="button"
-                  className={`${styles.optionItem} ${isSelected ? styles.optionSelected : ''}`}
-                  onClick={() => handleOptionSelect(index)}
+                  onClick={() => handleOptionSelect(idx)}
+                  className={`${styles.optionBtn} ${isSelected ? styles.selectedOption : ''}`}
                 >
-                  <span className={styles.optionMarker}>
-                    {String.fromCharCode(65 + index)}
-                  </span>
-                  <span className={styles.optionContent}>{option}</span>
+                  <span className={styles.optionLetter}>{letter}</span>
+                  <span className={styles.optionText}>{opt}</span>
                 </button>
               );
             })}
           </div>
-           <div className={styles.navigationControl}>
+        </div>
+      )}
+
+      {/* Navigation buttons */}
+      <div className={styles.navRow}>
         <button
           type="button"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          className={styles.backBtn}
+          className={styles.prevBtn}
         >
-          ← Previous
+          ← Back
         </button>
 
         {isLastQuestion ? (
           <button
             type="submit"
-            disabled={!hasAnsweredCurrent || isSubmitting}
+            disabled={isSubmitting}
             className={styles.submitBtn}
           >
-            {isSubmitting ? "Processing..." : "Submit Answers"}
+            {isSubmitting ? "Submitting..." : "Submit Quiz ✔"}
           </button>
         ) : (
           <button
             type="button"
             onClick={handleNext}
-            disabled={!hasAnsweredCurrent}
             className={styles.nextBtn}
           >
-            Next Question →
+            Next →
           </button>
         )}
       </div>
-        </div>
-
+      
+      {/* Hidden camera preview */}
+      <div style={{ position: 'fixed', bottom: '20px', right: '20px', width: '120px', height: '90px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+        <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
       </div>
-
-      {/* Execution/Navigation Interface */}
-     
     </form>
   );
 }

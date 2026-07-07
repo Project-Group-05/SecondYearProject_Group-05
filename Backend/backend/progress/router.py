@@ -5,7 +5,7 @@ from utils.response import success_response, error_response
 router = APIRouter()
 
 @router.get("/{student_id}")
-def fetch_all_progress(student_id: str):
+def fetch_all_progress(student_id: int):
     try:
         data = get_all_progress(student_id)
         return success_response("Progress fetched", {
@@ -16,7 +16,7 @@ def fetch_all_progress(student_id: str):
         return error_response(str(e))
 
 @router.get("/{student_id}/{subtopic_id}")
-def fetch_subtopic_progress(student_id: str, subtopic_id: int):
+def fetch_subtopic_progress(student_id: int, subtopic_id: int):
     try:
         data = get_subtopic_progress(student_id, subtopic_id)
         if not data:

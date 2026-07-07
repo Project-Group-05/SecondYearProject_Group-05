@@ -12,7 +12,7 @@
 
 .breadcrumbWrapper {
   width: 100%;
-  max-width: 600px;
+  max-width: 1400px;
   margin-bottom: 16px;
   text-align: left;
 }
@@ -34,7 +34,7 @@
   padding: 40px;
   border-radius: 12px;
   width: 100%;
-  max-width: 600px;
+  max-width: 1400px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -122,6 +122,8 @@
 
 .registerBtn {
   width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
   padding: 14px;
   background-color: #1A2B5F; /* Primary Navy */
   color: white;
@@ -198,4 +200,19 @@
 
 .paragraphText strong {
   color: #1A2B5F;
+}
+
+.paragraphText sub,
+.paragraphText sup {
+  font-size: 0.75em;
+  line-height: 0;
+  position: relative;
+}
+
+.paragraphText sub {
+  bottom: -0.25em;
+}
+
+.paragraphText sup {
+  top: -0.5em;
 }

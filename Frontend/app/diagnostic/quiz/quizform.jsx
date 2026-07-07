@@ -6,7 +6,7 @@ import styles from './quiz.module.css';
 
 export default function QuizForm() {
   const router = useRouter();
-  const BACKEND_URL = "http://127.0.0.1:8000";
+  const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
   // Hardware Verification States
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -81,7 +81,7 @@ export default function QuizForm() {
     async function fetchQuestions() {
       setIsLoading(true);
       try {
-        const response = await fetch('http://localhost:8000/diagnostic/questions');
+        const response = await fetch(`${BACKEND_URL}/diagnostic/questions`);
         const resData = await response.json();
 
         if (resData.success && resData.data?.questions) {
@@ -188,7 +188,7 @@ export default function QuizForm() {
         answers: formattedAnswers
       };
 
-      const backendResponse = await fetch('http://localhost:8000/diagnostic/submit', {
+      const backendResponse = await fetch(`${BACKEND_URL}/diagnostic/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -202,7 +202,7 @@ export default function QuizForm() {
 
       const reportSummary = resultData.data.results;
 
-      await fetch('http://localhost:8000/diagnostic/complete', {
+      await fetch(`${BACKEND_URL}/diagnostic/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ student_id: studentId })
