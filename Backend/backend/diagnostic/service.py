@@ -8,9 +8,8 @@ from diagnostic.bkt import run_bkt, classify_level
 def get_diagnostic_questions():
     result = supabase.table("main_exam_questions")\
         .select("id, question_text, option_a, option_b, option_c, option_d, option_e, subtopic_id")\
-        .gte("id", 1)\
-        .lte("id", 10)\
         .order("id", desc=False)\
+        .limit(40)\
         .execute()
     return result.data
 
@@ -92,8 +91,8 @@ def submit_diagnostic(student_id: str, student_email: str, answers: list):
     # 1. Fetch correct answers and subtopic mapping
     questions_raw = supabase.table("main_exam_questions")\
         .select("id, correct_option, subtopic_id")\
-        .gte("id", 1)\
-        .lte("id", 10)\
+        .order("id", desc=False)\
+        .limit(40)\
         .execute()
 
     questions = questions_raw.data

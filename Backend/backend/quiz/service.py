@@ -61,6 +61,7 @@ def get_quiz(student_id: int, subtopic_id: int):
             .select("*")\
             .eq("subtopic_id", subtopic_id)\
             .eq("stage", "first")\
+            .limit(10)\
             .execute()
         questions = result.data
         stage = "first"

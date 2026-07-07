@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import styles from '../../(auth)/register/register.module.css';
 import { FcGoogle } from "react-icons/fc";
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 export default function RegisterForm() {
   const router = useRouter();

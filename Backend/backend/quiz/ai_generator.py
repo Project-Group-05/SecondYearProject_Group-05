@@ -33,20 +33,18 @@ CONTENT (generate questions ONLY from this):
 {wrong_questions_text}
 
 INSTRUCTIONS:
-Generate exactly 15 questions total with this exact mix:
+Generate exactly 10 questions total with this exact mix:
 
 If past wrong questions exist:
-- 6 questions similar to past wrong answer concepts
+- 4 questions similar to past wrong answer concepts
   (same concept, different wording, never copy exact question)
-- 4 questions from random areas of the content
-  (covers concepts student may have forgotten)
 - 3 questions matching current difficulty level: {level}
-- 2 questions from concepts not covered in wrong answers
+- 3 questions from random areas of the content
+  (covers concepts student may have forgotten)
 
 If no past wrong questions:
-- 8 questions covering all major concepts in content
-- 4 questions at {level} difficulty
-- 3 questions from random areas of content
+- 6 questions covering all major concepts in content
+- 4 questions matching difficulty level: {level}
 
 Difficulty rules:
 - beginner     = basic recall and definitions
@@ -58,7 +56,7 @@ Rules:
 - Base ALL questions only on content provided above
 - Every question must have exactly 4 options
 - Only one correct answer per question
-- All 15 questions must be unique concepts
+- All 10 questions must be unique concepts
 
 Return ONLY a JSON array. No extra text. No markdown. No explanation.
 [

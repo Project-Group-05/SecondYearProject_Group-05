@@ -6,25 +6,31 @@ import styles from './ResultsPage.module.css';
 
 export default function ResultsForm() {
   // Mocking the assessment payload evaluation engine response
-  const [scoreSummary] = useState({
-    subtopic: "Group Trends",
-    totalQuestions: 5,
-    correctAnswers: 4,
-    percentage: 80,
-    performanceLevel: "Advanced", // Beginner, Intermediate, Advanced
-    feedbackMessage: "Excellent work! You have clearly mastered the structural trends and shielding behaviors of Group 1 elements."
+  const [scoreSummary, setScoreSummary] = useState({
+    subtopic: "Chemistry Quiz",
+    totalQuestions: 10,
+    correctAnswers: 0,
+    percentage: 0,
+    performanceLevel: "Beginner",
+    feedbackMessage: "Evaluating results..."
   });
 
   const [recommendedRoute, setRecommendedRoute] = useState('/dashboard');
 
   useEffect(() => {
-    // Dynamic adaptive logic based on scoring threshold metrics
-    if (scoreSummary.percentage < 50) {
-      setRecommendedRoute('/study'); // Send back to review material
-    } else {
-      setRecommendedRoute('/dashboard'); // Advance to dashboard map grid
+    const stored = localStorage.getItem('latest_quiz_result');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setScoreSummary(parsed);
+      
+      // Dynamic adaptive logic based on scoring threshold metrics
+      if (parsed.percentage < 50) {
+        setRecommendedRoute('/dashboard'); // Go back to try again
+      } else {
+        setRecommendedRoute('/dashboard');
+      }
     }
-  }, [scoreSummary.percentage]);
+  }, []);
 
   const handleActionProceed = (e) => {
     e.preventDefault();

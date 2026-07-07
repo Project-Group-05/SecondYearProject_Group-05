@@ -77,3 +77,105 @@ def get_todays_plan(student_id: int):
             entry["type"] = "weak"
 
     return plan
+
+def generate_recommended_timetable(student_id: int):
+    from diagnostic.service import get_student_subtopic_levels
+    
+    # 1. Fetch student subtopic levels
+    levels_data = get_student_subtopic_levels(str(student_id))
+    
+    # Sort subtopics so weak ones come first (Beginner -> Intermediate -> Advanced)
+    level_priority = {"beginner": 1, "intermediate": 2, "advanced": 3}
+    levels_data.sort(key=lambda x: level_priority.get(x["level"].lower(), 99))
+    
+    # Weekly slots template (Monday to Friday, at 16:00)
+    slots = [
+        {"day": "Monday", "time": "16:00"},
+        {"day": "Tuesday", "time": "16:00"},
+        {"day": "Wednesday", "time": "16:00"},
+        {"day": "Thursday", "time": "16:00"},
+        {"day": "Friday", "time": "16:00"}
+    ]
+    
+    timetable = []
+    study_queue = []
+    
+    # Populate the study queue:
+    # - Weaker/Beginner topics: 2 slots per week
+    # - Intermediate topics: 1 slot per week
+    for item in levels_data:
+        lvl = item["level"].lower()
+        if lvl == "beginner":
+            study_queue.append(item)
+            study_queue.append(item)
+        elif lvl == "intermediate":
+            study_queue.append(item)
+            
+    # Fill remaining slots with Advanced topics
+    if len(study_queue) < len(slots):
+        for item in levels_data:
+            if item["level"].lower() == "advanced":
+                study_queue.append(item)
+                
+    # Assign queue items to slots
+    for i, slot in enumerate(slots):
+        if i < len(study_queue):
+            topic = study_queue[i]
+            timetable.append({
+                "day_of_week": slot["day"],
+                "time": slot["time"],
+                "subtopic_id": topic["subtopic_id"],
+                "subtopic_name": topic["subtopic_name"],
+                "level": topic["level"],
+                "score": topic["score"],
+                "reason": f"Priority review for {topic['level']} subtopic (Score: {topic['score']}%)"
+            })
+            
+    return timetable
+
+def generate_best_timetable(student_id: int, availabilities: list):
+    from diagnostic.service import get_student_subtopic_levels
+    
+    # 1. Fetch student subtopic levels
+    levels_data = get_student_subtopic_levels(str(student_id))
+    
+    # Group subtopics by level
+    beginners = [x for x in levels_data if x["level"].lower() == "beginner"]
+    intermediates = [x for x in levels_data if x["level"].lower() == "intermediate"]
+    advanceds = [x for x in levels_data if x["level"].lower() == "advanced"]
+    
+    # Create prioritized study queue:
+    # - Beginners: weight 3 (appears 3 times in round rotation)
+    # - Intermediates: weight 2 (appears 2 times in round rotation)
+    # - Advanceds: weight 1 (appears 1 time in round rotation)
+    pool = []
+    max_rounds = 3
+    for round_idx in range(1, max_rounds + 1):
+        for b in beginners:
+            pool.append(b)
+        for i in intermediates:
+            if round_idx <= 2:
+                pool.append(i)
+        for a in advanceds:
+            if round_idx <= 1:
+                pool.append(a)
+                
+    # Assign queue items to user custom available slots
+    timetable = []
+    for idx, slot in enumerate(availabilities):
+        day = slot.get("day_of_week")
+        time_str = slot.get("time")
+        
+        if pool:
+            topic = pool[idx % len(pool)]
+            timetable.append({
+                "day_of_week": day,
+                "time": time_str,
+                "subtopic_id": topic["subtopic_id"],
+                "subtopic_name": topic["subtopic_name"],
+                "level": topic["level"],
+                "score": topic["score"],
+                "reason": f"Custom scheduled based on {topic['level']} priority (Score: {topic['score']}%). Weaker subtopics scheduled more frequently."
+            })
+            
+    return timetable

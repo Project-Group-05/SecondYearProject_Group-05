@@ -8,7 +8,7 @@ import rehypeRaw from 'rehype-raw';
 import styles from './StudyPage.module.css';
 import { parseSections } from './parseContent';
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
 export default function StudyForm({ subtopicId, studentId }) {
   const [content, setContent] = useState(null);
@@ -105,6 +105,8 @@ export default function StudyForm({ subtopicId, studentId }) {
     if (currentStep < studySteps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
+      localStorage.setItem('current_subtopic_id', subtopicId);
+      localStorage.setItem('current_student_id', studentId);
       window.location.href = '/modulequiz';
     }
   };
