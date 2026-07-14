@@ -270,99 +270,123 @@ export default function DiagnosticForm() {
     );
   }
 
-  // Proctor lock shield
-  if (isDistracted) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '50vh', gap: '16px', padding: '30px', backgroundColor: '#FEF2F2', border: '3px solid #EF4444', borderRadius: '16px' }}>
-        <div style={{ fontSize: '48px' }}>🚨</div>
-        <h2 style={{ color: '#991B1B', fontWeight: '800' }}>Lock Protocol Active</h2>
-        <p style={{ color: '#7F1D1D', textAlign: 'center', maxWidth: '500px' }}>{aiMessage}</p>
-        <p style={{ color: '#991B1B', fontSize: '13px' }}>Return eye focus to the window and remove any portable devices to continue.</p>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className={styles.formStructure}>
-      {/* Timer display */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: timeLeft < 60 ? '#FEE2E2' : '#F3F4F6', borderRadius: '8px', marginBottom: '24px' }}>
-        <span style={{ fontSize: '16px' }}>⏱</span>
-        <span style={{ fontSize: '14px', fontWeight: '700', color: timeLeft < 60 ? '#991B1B' : '#374151' }}>
-          {timeLeft <= 0 ? "Time Expired!" : `Time Remaining: ${formatTime(timeLeft)}`}
-        </span>
-      </div>
-
-      {/* Progress */}
-      <div className={styles.progressContainer}>
-        <div className={styles.progressTrack}>
-          <div 
-            className={styles.progressFill} 
-            style={{ width: `${progressPercent}%` }}
-          ></div>
+    <div style={{ position: 'relative', width: '100%' }}>
+      {/* Quiz Form structure with interactive opacity blocking */}
+      <form 
+        onSubmit={handleSubmit} 
+        className={styles.formStructure}
+        style={{
+          opacity: isDistracted ? 0.35 : 1,
+          pointerEvents: isDistracted ? 'none' : 'auto',
+          transition: 'all 0.2s ease'
+        }}
+      >
+        {/* Timer display */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', backgroundColor: timeLeft < 60 ? '#FEE2E2' : '#F3F4F6', borderRadius: '8px', marginBottom: '24px' }}>
+          <span style={{ fontSize: '16px' }}>⏱</span>
+          <span style={{ fontSize: '14px', fontWeight: '700', color: timeLeft < 60 ? '#991B1B' : '#374151' }}>
+            {timeLeft <= 0 ? "Time Expired!" : `Time Remaining: ${formatTime(timeLeft)}`}
+          </span>
         </div>
-        <span className={styles.progressText}>Question {currentIndex + 1} of {questions.length}</span>
-      </div>
 
-      {/* Question rendering */}
-      {currentQuestion && (
-        <div className={styles.questionCard}>
-          <h3 className={styles.questionText}>{currentQuestion.question_text}</h3>
-          
-          <div className={styles.optionsList}>
-            {[currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d].map((opt, idx) => {
-              const letter = optionLetters[idx];
-              const isSelected = selectedAnswers[currentIndex] === letter;
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleOptionSelect(idx)}
-                  className={`${styles.optionBtn} ${isSelected ? styles.selectedOption : ''}`}
-                >
-                  <span className={styles.optionLetter}>{letter}</span>
-                  <span className={styles.optionText}>{opt}</span>
-                </button>
-              );
-            })}
+        {/* Progress */}
+        <div className={styles.progressContainer}>
+          <div className={styles.progressTrack}>
+            <div 
+              className={styles.progressFill} 
+              style={{ width: `${progressPercent}%` }}
+            ></div>
           </div>
+          <span className={styles.progressLabel}>Question {currentIndex + 1} of {questions.length}</span>
+        </div>
+
+        {/* Question rendering */}
+        {currentQuestion && (
+          <div className={styles.questionCard}>
+            <h3 className={styles.questionText}>{currentQuestion.question_text}</h3>
+            
+            <div className={styles.optionsList}>
+              {[currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d].map((opt, idx) => {
+                const letter = optionLetters[idx];
+                const isSelected = selectedAnswers[currentIndex] === letter;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleOptionSelect(idx)}
+                    className={`${styles.optionItem} ${isSelected ? styles.optionSelected : ''}`}
+                    disabled={isSubmitting || isDistracted}
+                  >
+                    <span className={styles.optionMarker}>{letter}</span>
+                    <span className={styles.optionContent}>{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Navigation buttons */}
+        <div className={styles.navigationControl}>
+          <button
+            type="button"
+            onClick={handlePrevious}
+            disabled={currentIndex === 0 || isDistracted}
+            className={styles.backBtn}
+          >
+            ← Back
+          </button>
+
+          {isLastQuestion ? (
+            <button
+              type="submit"
+              disabled={isSubmitting || isDistracted}
+              className={styles.submitBtn}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Quiz ✔"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={isDistracted}
+              className={styles.nextBtn}
+            >
+              Next →
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Proctor lock overlay display */}
+      {isDistracted && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(254, 242, 242, 0.95)',
+          border: '3px solid #EF4444',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '40px',
+          zIndex: 10
+        }}>
+          <div style={{ fontSize: '48px' }}>🚨</div>
+          <h2 style={{ color: '#991B1B', fontWeight: '800', margin: 0 }}>Lock Protocol Active</h2>
+          <p style={{ color: '#7F1D1D', textAlign: 'center', maxWidth: '500px', margin: 0 }}>{aiMessage}</p>
+          <p style={{ color: '#991B1B', fontSize: '13px', fontWeight: 'bold', margin: 0 }}>Return eye focus to the window and remove any portable devices to continue.</p>
         </div>
       )}
 
-      {/* Navigation buttons */}
-      <div className={styles.navRow}>
-        <button
-          type="button"
-          onClick={handlePrevious}
-          disabled={currentIndex === 0}
-          className={styles.prevBtn}
-        >
-          ← Back
-        </button>
-
-        {isLastQuestion ? (
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={styles.submitBtn}
-          >
-            {isSubmitting ? "Submitting..." : "Submit Quiz ✔"}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleNext}
-            className={styles.nextBtn}
-          >
-            Next →
-          </button>
-        )}
-      </div>
-      
       {/* Hidden camera preview */}
-      <div style={{ position: 'fixed', bottom: '20px', right: '20px', width: '120px', height: '90px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+      <div style={{ position: 'fixed', bottom: '20px', right: '20px', width: '120px', height: '90px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 100 }}>
         <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
         <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
       </div>
-    </form>
+    </div>
   );
 }
