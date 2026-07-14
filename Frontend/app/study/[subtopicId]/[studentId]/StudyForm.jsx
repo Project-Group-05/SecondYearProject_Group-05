@@ -46,6 +46,31 @@ export default function StudyForm({ subtopicId, studentId }) {
   }, [subtopicId, studentId]);
 
   useEffect(() => {
+    async function createStudySession() {
+      try {
+        const response = await fetch(`${BACKEND_URL}/results/create-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            student_id: Number(studentId),
+            subtopic_id: Number(subtopicId),
+            webcam_enabled: true
+          })
+        });
+        const result = await response.json();
+        if (result.success) {
+          localStorage.setItem('current_study_session_id', result.data.session_id);
+        }
+      } catch (err) {
+        console.error("Failed to initialize study session:", err);
+      }
+    }
+    if (studentId && subtopicId) {
+      createStudySession();
+    }
+  }, [subtopicId, studentId]);
+
+  useEffect(() => {
     async function startStudyCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -84,7 +109,11 @@ export default function StudyForm({ subtopicId, studentId }) {
       const formData = new FormData();
       formData.append("file", blob, "snapshot.jpg");
       try {
-        const res = await fetch(`${BACKEND_URL}/behaviour/analyze-frame`, {
+        const sessionId = localStorage.getItem('current_study_session_id');
+        const url = sessionId
+          ? `${BACKEND_URL}/behaviour/analyze-frame?session_id=${sessionId}&student_id=${studentId}`
+          : `${BACKEND_URL}/behaviour/analyze-frame`;
+        const res = await fetch(url, {
           method: "POST",
           body: formData,
         });

@@ -10,7 +10,11 @@ router = APIRouter(tags=["Behaviour"])
 model = YOLO("yolov8n.pt")
 
 @router.post("/analyze-frame")
-async def analyze_frame(file: UploadFile = File(...)):
+async def analyze_frame(
+    file: UploadFile = File(...),
+    student_id: int = None,
+    session_id: int = None
+):
     try:
         # 1. Stream the raw JPEG binary data payload coming from Next.js
         contents = await file.read()
@@ -33,46 +37,121 @@ async def analyze_frame(file: UploadFile = File(...)):
         phone_detected = 67 in detected_classes
 
         # 🛡️ COGNITIVE PROCTOR THREAT VERDICT MATRIX
-        if phone_detected:
-            # Rule 1: High Priority Flag - Physical device spotted in frame bounding tracking lanes
-            return {
-                "success": True,
-                "data": {
-                    "distracted": True,
-                    "message": "🚫 Mobile phone detected! Please put away your device to resume."
-                }
-            }
+        distracted = False
+        message = "Monitoring Feed Active 🟢"
 
-        if person_count == 0:
-            # Rule 2: Student has left their seat or blocked the camera array
-            return {
-                "success": True,
-                "data": {
-                    "distracted": True,
-                    "message": "❌ No student detected! Please remain in front of the camera feed."
-                }
-            }
-        
+        if phone_detected:
+            distracted = True
+            message = "🚫 Mobile phone detected! Please put away your device to resume."
+        elif person_count == 0:
+            distracted = True
+            message = "❌ No student detected! Please remain in front of the camera feed."
         elif person_count > 1:
-            # Rule 3: Integrity Hazard - More than one individual in view
-            return {
-                "success": True,
-                "data": {
-                    "distracted": True,
-                    "message": "⚠️ Multiple people detected! Ensure you are evaluating alone."
-                }
+            distracted = True
+            message = "⚠️ Multiple people detected! Ensure you are evaluating alone."
+
+        # If session_id is provided, incrementally update proctor metrics in Supabase
+        if session_id:
+            try:
+                import database
+                res = database.supabase.table("session_summary").select("*").eq("id", session_id).execute()
+                if res.data:
+                    row = res.data[0]
+                    old_phone = row.get("phone_percent") or 0
+                    old_absent = row.get("absent_percent") or 0
+                    old_focus = row.get("focus_score") if row.get("focus_score") is not None else 100
+                    
+                    alpha = 0.08  # Weight of current frame
+                    
+                    phone_val = 100 if phone_detected else 0
+                    absent_val = 100 if person_count == 0 else 0
+                    current_focus = 0 if distracted else 100
+                    
+                    new_phone = int(old_phone * (1 - alpha) + phone_val * alpha)
+                    new_absent = int(old_absent * (1 - alpha) + absent_val * alpha)
+                    new_focus = int(old_focus * (1 - alpha) + current_focus * alpha)
+                    
+                    database.supabase.table("session_summary").update({
+                        "phone_percent": new_phone,
+                        "absent_percent": new_absent,
+                        "focus_score": new_focus,
+                        "webcam_enabled": True
+                    }).eq("id", session_id).execute()
+            except Exception as db_err:
+                print(f"[PROCTOR DB ERROR] Failed to save proctor metrics: {str(db_err)}")
+
+        return {
+            "success": True,
+            "data": {
+                "distracted": distracted,
+                "message": message
             }
-        
-        else:
-            # Exactly one student confirmed, and absolutely zero phones visible!
-            return {
-                "success": True,
-                "data": {
-                    "distracted": False,
-                    "message": "Monitoring Feed Active 🟢"
-                }
-            }
+        }
 
     except Exception as e:
         print(f"YOLO Proctoring pipeline exception: {str(e)}")
         return {"success": False, "message": f"Internal object tracking crash: {str(e)}"}
+
+
+# --- GET: Fetch Behavior Tracking Report ---
+@router.get("/report/{student_id}")
+def get_behaviour_report(student_id: int):
+    try:
+        import database
+        # Fetch all proctored sessions
+        res = database.supabase.table("session_summary")\
+            .select("*")\
+            .eq("student_id", student_id)\
+            .eq("webcam_enabled", True)\
+            .execute()
+            
+        sessions_list = []
+        total_focus = 0
+        phone_warnings = 0
+        absence_warnings = 0
+        
+        for row in res.data:
+            subtopic_id = row.get("subtopic_id")
+            subtopic_name = "General Session"
+            if subtopic_id:
+                sub_res = database.supabase.table("subtopics").select("title").eq("id", subtopic_id).execute()
+                if sub_res.data:
+                    subtopic_name = sub_res.data[0]["title"]
+            
+            focus = row.get("focus_score") if row.get("focus_score") is not None else 100
+            phone = row.get("phone_percent") or 0
+            absent = row.get("absent_percent") or 0
+            
+            total_focus += focus
+            if phone > 5:
+                phone_warnings += 1
+            if absent > 10:
+                absence_warnings += 1
+                
+            sessions_list.append({
+                "session_id": row["id"],
+                "subtopic_name": subtopic_name,
+                "date": row["session_date"] or row["created_at"].split("T")[0],
+                "focus_score": focus,
+                "phone_percent": phone,
+                "absent_percent": absent
+            })
+            
+        count = len(sessions_list)
+        overall_focus = int(total_focus / count) if count > 0 else 100
+        
+        # Sort sessions by date descending
+        sessions_list.sort(key=lambda x: x["date"], reverse=True)
+        
+        return {
+            "success": True,
+            "data": {
+                "overall_focus_average": overall_focus,
+                "total_proctored_sessions": count,
+                "phone_warning_count": phone_warnings,
+                "absence_warning_count": absence_warnings,
+                "sessions": sessions_list
+            }
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}

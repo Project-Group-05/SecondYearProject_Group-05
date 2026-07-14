@@ -82,7 +82,10 @@ export default function DiagnosticForm() {
       formData.append("file", blob, "snapshot.jpg");
 
       try {
-        const res = await fetch(`${BACKEND_URL}/behaviour/analyze-frame`, {
+        const url = sessionId
+          ? `${BACKEND_URL}/behaviour/analyze-frame?session_id=${sessionId}&student_id=${studentId}`
+          : `${BACKEND_URL}/behaviour/analyze-frame`;
+        const res = await fetch(url, {
           method: "POST",
           body: formData,
         });

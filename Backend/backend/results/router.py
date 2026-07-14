@@ -41,3 +41,20 @@ def session_results(session_id: int, student_id: int):
         return success_response("Session results fetched", data)
     except Exception as e:
         return error_response(str(e))
+
+class SessionCreate(BaseModel):
+    student_id: int
+    subtopic_id: int
+    webcam_enabled: bool = False
+
+@router.post("/create-session")
+def api_create_session(req: SessionCreate):
+    try:
+        from quiz.service import create_session
+        from database import supabase
+        session_id = create_session(req.student_id, req.subtopic_id)
+        if req.webcam_enabled:
+            supabase.table("session_summary").update({"webcam_enabled": True}).eq("id", session_id).execute()
+        return success_response("Session created successfully", {"session_id": session_id})
+    except Exception as e:
+        return error_response(str(e))
